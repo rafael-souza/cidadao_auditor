@@ -1,0 +1,75 @@
+<div class="pages">
+  <div data-page="novaOcorrencia" class="page no-toolbar no-navbar">
+    <div class="page-content">
+    
+		<div class="navbarpages">
+			<div class="nav_left_logo">
+				<a href="index.html"><img src="images/logo_white.png" alt="" title="" /></a>
+			</div>
+			<div class="nav_right_button"><a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" /></a>
+				<a href="ocorrencia.html"><img src="images/icons/white/back.png" alt="" title="" /></a>
+			</div>
+		</div>
+		<div id="pages_maincontent"> 
+     
+            <h2 class="page_title">Dados da Ocorrência</h2> 
+     
+            <div class="page_content"> 
+
+				<blockquote id="descNovaOcorrencia">
+					Informe os dados desejados
+				</blockquote>
+                <div class="ocorrenciaFormulario contactform">
+					<form id="ocorrenciaFormulario">
+						<label>Tipo:</label>
+						<div class="list-block selectTipo">
+							<ul>
+								<li>
+								<!-- Additional "smart-select" class -->
+								<a href="#" class="item-link smart-select" data-back-text="Voltar" data-searchbar="true" data-searchbar-placeholder="Pesquisar">
+								<!-- select -->
+								<select name="tipoOcorrencia" class="required" id="tipoOcorrencia">
+								  
+								</select>
+								<div class="item-content">
+								  <div class="item-inner">
+									<!-- Select label -->
+									<div class="item-title">Selecione</div>
+								  </div>
+								</div>
+							  </a>
+							</li>
+						  </ul>
+						</div>   
+							
+						<label>Endereço:</label>
+						<input id="endereco" type="text" name="endereco" value="" class="form_input" />
+						<p><a href="#" data-popup=".popup-alterar-endereco" class="open-popup" onclick="inicializaMapaAlterarEndereco()">Alterar </a></p>
+						
+						<label>Envie uma foto do problema:</label>
+						<center>
+							<div style="margin: 0 0 0 0; pading: 0 0 0 0;" >
+								<span id="fotoOcorrencia"></span>
+							</div>
+						</center>
+						<center>
+							<div class="botoes-foto" style="display: inline-flex;">
+								<a href="#" onclick="fotografar()" style="padding-left: 30px; width: 30%; height:30%"><img src="images/fotografar.png" alt="" title="" /></a>
+								<a href="#" onclick="escolherFoto()" style="padding-left: 30px; width: 30%; height:30%"><img src="images/escolher_foto.png" alt="" title="" /></a>
+							</div>
+						</center>
+						
+						
+						<label>O que está acontecendo?</label>
+						<textarea name="observacao" id="observacao" class="form_textarea required" rows="6" cols=""></textarea>
+						
+						
+					</form>
+					<input type="submit" name="enviarOcorrencia" class="form_submit" id="enviarOcorrencia" onclick="enviarOcorrencia()" value="Enviar"/>
+                </div>
+							
+            </div>
+		</div>
+    </div>
+  </div>
+</div>

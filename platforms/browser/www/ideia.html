@@ -1,0 +1,64 @@
+<div class="pages">
+  <div data-page="ideia" class="page no-toolbar no-navbar">
+    <div class="page-content">
+    
+		<div class="navbarpages">
+			<div class="nav_left_logo">
+				<a href="index.html"><img src="images/logo_white.png" alt="" title="" /></a>
+			</div>
+			<div class="nav_right_button">
+				<a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" />
+			</div>
+		</div>
+		<div id="pages_maincontent"> 
+     
+            <h2 class="page_title">Conte-nos sua Ideia</h2> 
+     
+            <div class="page_content"> 
+
+				<blockquote id="descIdeia">
+					Esse espaço é destinado ao cidadão que tem uma ideia que pode melhorar nossa cidade, faça sua proposta e aguarde o nosso retorno.
+				</blockquote>
+				
+                <div class="ideiaFormulario contactform">
+					<form id="ideiaFormulario">
+						<label>Título:</label>
+						<input id="tituloIdeia" type="text" name="tituloIdeia" value="" class="form_input" />
+						
+						<label>Endereço:</label>
+						<input id="enderecoIdeia" type="text" name="enderecoIdeia" value="" class="form_input" />						
+						
+						<label>Qual é a sua Ideia?</label>
+						<textarea name="descricaoIdeia" id="descricaoIdeia" class="form_textarea required" rows="6" cols=""></textarea>
+						
+					</form>
+					<input type="submit" name="enviarIdeia" class="form_submit" id="enviarIdeia" onclick="enviarIdeia()" value="Enviar"/>
+                </div>
+				
+				<div class="list-block accordion-list">
+					<ul>
+						<li class="accordion-item">
+							<a href="#" class="item-content item-link">
+								<div class="item-inner">
+									<div class="item-title">Veja o que achamos da sua ideia</div>
+								</div>
+							</a>
+							<div class="accordion-item-content">
+								<div class="content-block contactform">
+									<form id="consultaIdeia">
+										<label>Nº Protocolo:</label>
+										<input id="numeroProtocolo" type="text" name="numeroProtocolo" value="" class="form_input required"/>
+										
+										<input type="submit" name="consultarIdeia" class="form_submit" id="consultarIdeia" onclick="consultarIdeia()" value="Consultar"/>
+									</form>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+							
+            </div>
+		</div>
+    </div>
+  </div>
+</div>

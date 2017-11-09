@@ -1,0 +1,74 @@
+<div class="pages">
+  <div data-page="denuncia" class="page no-toolbar no-navbar">
+    <div class="page-content">
+    
+		<div class="navbarpages">
+			<div class="nav_left_logo">
+				<a href="index.html"><img src="images/logo_white.png" alt="" title="" /></a>
+			</div>
+			<div class="nav_right_button">
+				<a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" /></a>
+			</div>
+		</div>
+		<div id="pages_maincontent"> 
+     
+            <h2 class="page_title">Gostaria de fazer uma denúncia?</h2> 
+     
+            <div class="page_content"> 
+
+				<blockquote id="descDenuncia">
+					Esse espaço é destinado ao cidadão que deseja realizar uma denúncia de forma anônima, seus dados serão mantidos em sigilo e as providências cabíveis serão tomadas por parte da prefeitura caso seja necessário.
+				</blockquote>
+				
+                <div class="denunciaFormulario contactform">
+					<form id="denunciaFormulario">
+						<label>Título:</label>
+						<input id="tituloDenuncia" type="text" name="tituloDenuncia" value="" class="form_input" />
+						
+						<label>Endereço:</label>
+						<input id="enderecoDenuncia" type="text" name="enderecoDenuncia" value="" class="form_input" />						
+						
+						<label>Descrição:</label>
+						<textarea name="descricaoDenuncia" id="descricaoDenuncia" class="form_textarea required" rows="6" cols=""></textarea>
+
+						<label>Manter aninimato?</label>						
+						
+						<div class="item-input">
+							<label class="label-switch">
+							 <input type="checkbox" id="denunciaAnonima" name="denunciaAnonima">
+							 <div class="checkbox"></div>
+							</label>
+						</div>
+						
+					</form>
+					<br/>
+					<input type="submit" name="enviarDenuncia" class="form_submit" id="enviarDenuncia" onclick="enviarDenuncia()" value="Enviar"/>
+                </div>
+				
+				<div class="list-block accordion-list">
+					<ul>
+						<li class="accordion-item">
+							<a href="#" class="item-content item-link">
+								<div class="item-inner">
+									<div class="item-title">Consulte o andamento da denúncia?</div>
+								</div>
+							</a>
+							<div class="accordion-item-content">
+								<div class="content-block contactform">
+									<form id="consultaIdeia">
+										<label>Nº Protocolo:</label>
+										<input id="numeroProtocoloDenuncia" type="text" name="numeroProtocoloDenuncia" value="" class="form_input required"/>
+										
+										<input type="submit" name="consultarDenuncia" class="form_submit" id="consultarDenuncia" onclick="consultarDenuncia()" value="Consultar"/>
+									</form>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+							
+            </div>
+		</div>
+    </div>
+  </div>
+</div>
