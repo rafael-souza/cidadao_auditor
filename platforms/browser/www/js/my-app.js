@@ -15,7 +15,7 @@ var myApp = new Framework7({
     template7Pages: true
 });
 
-var urlSync = 'http://192.168.0.102:8080/procity/soa/service/mobile.';
+var urlSync = 'http://192.168.0.101:8080/procity/soa/service/mobile.';
 var listaOcorrencias = [];
 var listaTipoOcorrencias = [];
 var map;
@@ -40,10 +40,11 @@ $$(document).on('ajaxComplete',function(){myApp.hideIndicator();});
 $$(document).on('pageInit', function (e) {
 
 	$(".swipebox").swipebox();
-	$("#ocorrenciaFormulario").validate();
+	
 	$("#registerFormulario").validate();
 	$("#loginFormulario").validate();
 	$("#forgotFormulario").validate();
+
 	
 	$('a.backbutton').click(function(){
 		parent.history.back();
@@ -730,7 +731,36 @@ function realizaLogout(){
 * realizando o cadastro do usuário
 */
 function realizaCadastro(){
+	
+  // verificando se informou os dados obrigatorios
+    if ($("#nomeCad").val() == ""){                       
+        return false;        
+    }
 
+    if ($("#emailCad").val() == ""){                       
+        return false;   
+    }
+
+    var emailFilter=/^.+@.+\..{2,}$/;
+    var illegalChars= /[\(\)\<\>\,\;\:\\\/\"\[\]]/   
+    if(!(emailFilter.test($("#emailCad").val() )) || $("#emailCad").val().match(illegalChars)){
+        myApp.alert(
+            'Você deve informar um E-mail válido!',
+            'Atenção!');       
+        return false; 
+    }
+
+    if ($("#senhaCad").val() == ""){     
+        return false;  
+    }
+	
+	if ($("#senhaCad").val() != $("#senhaConfCad").val()){                    
+        myApp.alert(
+            'A senha digitada não confere com a confirmação!',
+            'Atenção!');       
+        return false;   
+    }	
+	
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync($("#emailCad").val(), $("#senhaCad").val());    
 
@@ -869,19 +899,21 @@ function confirmaEndereco(){
 */
 function enviarOcorrencia(){
 	
+	if ($("#tipoOcorrencia option:selected").val() == 0){ 
+		myApp.alert("O Tipo da Ocorrência deve ser informado.", "Atenção!");
+		return false;
+	}
+	
+	if ($("#observacao").val() == ""){
+		myApp.alert("Você deve nos informar o que está acontecendo.", "Atenção!");
+		return false;
+	}
+	
 	// verificando se o usuario está logado no sistema
 	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
 		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
 		myApp.alert("Você precisa estar logado para enviar suas ocorrências", "Atenção!");
     }
-	
-	if ($("#tipoOcorrencia option:selected").val() == 0){ 
-		return false;
-	}
-	
-	if ($("#observacao").val() == ""){
-		return false;
-	}
 	
 	realizaEnvioOcorrencia();
 }
@@ -956,25 +988,28 @@ $$(document).on('pageInit', '.page[data-page="sugestao"]', function (e) {
 		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
 		$("#descSugestao").text("Você precisa estar logado para enviar suas sugestões");
     }
+	
 });  
 
 /**
 * Realiza o envio da Sugestao
 */
 function enviarSugestao(){
-	// verificando se informou os dados obrigatorios
-    if ($("#tituloSugestao").val() == ""){       
-        return false;        
-    }
-
-    if ($("#descricaoSugestao").val() == ""){      
-        return false;  
-    }
-	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
 		return false;
 	}
+	
+	// verificando se informou os dados obrigatorios
+    if ($("#tituloSugestao").val() == ""){       
+        myApp.alert("Você deve informar o título da sua sugestão.", "Atenção!");
+		return false;        
+    }
+
+    if ($("#descricaoSugestao").val() == ""){      
+		myApp.alert("Você deve descrever sua sugestão.", "Atenção!");
+        return false;  
+    }
 
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
@@ -988,6 +1023,7 @@ function enviarSugestao(){
     //tipoOcorrencia.descricao = $("#tipoOcorrencia option:selected").text();
     pessoa.email = window.localStorage.getItem("email_usuario");
     sugestao.pessoa = pessoa;
+	sugestao.descTipo = $("#tipoSugestao option:selected").val();
 	sugestao.titulo = $("#tituloSugestao").val();
 	sugestao.endereco = $("#enderecoSugestao").val();
 	sugestao.descricao = $("#descricaoSugestao").val();
@@ -996,7 +1032,7 @@ function enviarSugestao(){
     var obj = JSON.stringify({ sugestao: sugestao });            
     // enviando os dados
     $.ajax({
-        url: urlSyncsugestao,
+        url: urlSyncSugestao,
         type: 'POST',
         contentType: "application.mob/json; charset=utf-8",
         data: obj,
@@ -1029,6 +1065,63 @@ function enviarSugestao(){
 	
 }
 
+/**
+*
+*/
+function consultarSugestao(){
+	
+	if (window.localStorage.getItem("email_usuario") == null){
+		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
+		return false;
+	}
+	
+	if ($("#numeroProtocoloSugestao").val == ''){
+		myApp.alert("Você deve informar o nº do protocolo.", "Atenção!");
+		return false;
+	}
+	
+	 // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+
+    // gerando a url de envio dos dados
+    var urlSyncConsultaSugestao = urlSync + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	urlSyncConsultaSugestao = urlSyncConsultaSugestao + "protocolo=" + $("#numeroProtocoloSugestao").val();
+
+    var sugestao = new Object();
+	sugestao.protocolo = $("#numeroProtocoloSugestao").val();
+	
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ sugestao: sugestao });            
+    // enviando os dados
+    $.ajax({
+        url: urlSyncConsultaSugestao,
+        type: 'GET',
+        contentType: "application.mob/json; charset=utf-8",
+        data: obj,
+        async: false,
+        dataType: 'json',        
+        success: function (data) { 
+			var texto;
+			if (data.sugestao[0].observacao != null) {
+				texto = "<h4>Status: </h4>"+ data.sugestao[0].status.lookup + "<p>" + data.sugestao[0].observacao + "</p>";
+			} else {
+				texto = "<h4>Status: </h4>"+ data.sugestao[0].status.lookup + "<p>Sua Sugestão ainda não foi avaliada, por favor aguarde!</p>";
+			}
+			$("#descricaoConsulta").text(texto);
+			myApp.pickerModal('.picker-info-consulta')
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    }); 
+	
+}
+
 /** abaixo os códigos personalizados */
 $$(document).on('pageInit', '.page[data-page="denuncia"]', function (e) {
 	// verificando se o usuario está logado no sistema
@@ -1041,19 +1134,22 @@ $$(document).on('pageInit', '.page[data-page="denuncia"]', function (e) {
 /**
 */
 function enviarDenuncia(){
+	
+	if (window.localStorage.getItem("email_usuario") == null){
+		myApp.alert("Você precisa estar logado para enviar suas denúncias.", "Atenção!");
+		return false;
+	}
+	
 	// verificando se informou os dados obrigatorios
     if ($("#tituloDenuncia").val() == ""){  
+		myApp.alert("Você deve informar o título da denúncia", "Atenção!");
         return false;        
     }
 
     if ($("#descricaoDenuncia").val() == ""){
+		myApp.alert("Você deve descrever a sua denúncia.", "Atenção!");
         return false;  
     }
-	
-	if (window.localStorage.getItem("email_usuario") == null){
-		myApp.alert("Você precisa estar logado para enviar suas ideias.", "Atenção!");
-		return false;
-	}
 
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
@@ -1109,4 +1205,67 @@ function enviarDenuncia(){
         }
 
     });   
+}
+
+/*
+*
+*/
+function consultarDenuncia(){
+	if (window.localStorage.getItem("email_usuario") == null){
+		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
+		return false;
+	}
+	
+	if ($("#numeroProtocoloDenuncia").val == ''){
+		myApp.alert("Você deve informar o nº do protocolo.", "Atenção!");
+		return false;
+	}
+	
+	 // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+
+    // gerando a url de envio dos dados
+    var urlSyncConsultaDenuncia = urlSync + "denuncia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	urlSyncConsultaDenuncia = urlSyncConsultaDenuncia + "protocolo=" + $("#numeroProtocoloDenuncia").val();
+	
+    var denuncia = new Object();
+    var pessoa = new Object();
+	
+	enuncia.pessoa = pessoa;
+	denuncia.protocolo = $("#numeroProtocoloDenuncia").val();
+	denuncia.titulo;
+	denuncia.endereco;
+	denuncia.descricao;
+
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ denuncia: denuncia });            
+    // enviando os dados
+    $.ajax({
+        url: urlSyncConsultaDenuncia,
+        type: 'GET',
+        contentType: "application.mob/json; charset=utf-8",
+        data: obj,
+        async: false,
+        dataType: 'json',        
+        success: function (data) { 
+			var texto;
+			if (data.denuncia[0].observacao != null) {
+				texto = "<p>" + data.denuncia[0].observacao + "</p>";
+			} else {
+				texto = "<p>Sua denúncia ainda não foi avaliada, por favor aguarde!</p>";
+			}
+			
+			$("#descricaoConsulta").text(texto);
+			myApp.pickerModal('.picker-info-consulta')
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    }); 
+	
 }

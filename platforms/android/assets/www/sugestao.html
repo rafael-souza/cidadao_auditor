@@ -7,7 +7,7 @@
 				<a href="index.html"><img src="images/logo_white.png" alt="" title="" /></a>
 			</div>
 			<div class="nav_right_button">
-				<a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" />
+				<a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" /></a>
 			</div>
 		</div>
 		<div id="pages_maincontent"> 
@@ -21,9 +21,35 @@
 				</blockquote>
 				
                 <div class="sugestaoFormulario contactform">
+					
 					<form id="sugestaoFormulario">
+						
 						<label>Título:</label>
-						<input id="tituloSugestao" type="text" name="tituloSugestao" value="" class="form_input" />
+						<input id="tituloSugestao" type="text" name="tituloSugestao" value="" class="form_input required" />
+						
+						<label>Tipo:</label>
+						<div class="list-block selectTipo">
+							<ul>
+								<li>
+									<a href="#" class="item-link smart-select required" data-open-in="picker" picker-close-text="OK">
+										<select name="tipoSugestao" class="required" id="tipoSugestao">
+											<option value="EDUC">Educação</option>
+											<option value="SAUD">Saúde</option>
+											<option value="ESPO">Esportes</option>
+											<option value="TURI">Turismo</option>
+											<option value="MEIO">Meio Ambiente</option>
+											<option value="INFR">Infraestrutura</option>
+											<option value="OUTR">Outros</option>
+										</select>
+										<div class="item-content">
+											<div class="item-inner">
+												<div class="item-title">Selecione</div>
+										  </div>
+										</div>
+									</a>
+								</li>
+							</ul>
+						</div>
 						
 						<label>Endereço:</label>
 						<input id="enderecoSugestao" type="text" name="enderecoSugestao" value="" class="form_input" />						
@@ -32,7 +58,9 @@
 						<textarea name="descricaoSugestao" id="descricaoSugestao" class="form_textarea required" rows="6" cols=""></textarea>
 						
 					</form>
+					
 					<input type="submit" name="enviarSugestao" class="form_submit" id="enviarSugestao" onclick="enviarSugestao()" value="Enviar"/>
+					
                 </div>
 				
 				<div class="list-block accordion-list">
@@ -47,10 +75,9 @@
 								<div class="content-block contactform">
 									<form id="consultaSugestao">
 										<label>Nº Protocolo:</label>
-										<input id="numeroProtocolo" type="text" name="numeroProtocolo" value="" class="form_input required"/>
-										
-										<input type="submit" name="consultarSugestao" class="form_submit" id="consultarSugestao" onclick="consultarSugestao()" value="Consultar"/>
+										<input id="numeroProtocoloSugestao" type="text" name="numeroProtocoloSugestao" value="" class="form_input required"/>
 									</form>
+									<input type="submit" name="consultarSugestao" class="form_submit" id="consultarSugestao" onclick="consultarSugestao()" value="Consultar"/>
 								</div>
 							</div>
 						</li>
