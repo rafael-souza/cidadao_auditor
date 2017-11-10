@@ -1,0 +1,64 @@
+<div class="pages">
+  <div data-page="sugestao" class="page no-toolbar no-navbar">
+    <div class="page-content">
+    
+		<div class="navbarpages">
+			<div class="nav_left_logo">
+				<a href="index.html"><img src="images/logo_white.png" alt="" title="" /></a>
+			</div>
+			<div class="nav_right_button">
+				<a href="menu.html"><img src="images/icons/white/menu.png" alt="" title="" />
+			</div>
+		</div>
+		<div id="pages_maincontent"> 
+     
+            <h2 class="page_title">Conte-nos sua sugestão</h2> 
+     
+            <div class="page_content"> 
+
+				<blockquote id="descSugestao">
+					Esse espaço é destinado ao cidadão que tem uma sugestão que pode melhorar nossa cidade, faça sua proposta e aguarde o nosso retorno.
+				</blockquote>
+				
+                <div class="sugestaoFormulario contactform">
+					<form id="sugestaoFormulario">
+						<label>Título:</label>
+						<input id="tituloSugestao" type="text" name="tituloSugestao" value="" class="form_input" />
+						
+						<label>Endereço:</label>
+						<input id="enderecoSugestao" type="text" name="enderecoSugestao" value="" class="form_input" />						
+						
+						<label>Qual é a sua sugestão?</label>
+						<textarea name="descricaoSugestao" id="descricaoSugestao" class="form_textarea required" rows="6" cols=""></textarea>
+						
+					</form>
+					<input type="submit" name="enviarSugestao" class="form_submit" id="enviarSugestao" onclick="enviarSugestao()" value="Enviar"/>
+                </div>
+				
+				<div class="list-block accordion-list">
+					<ul>
+						<li class="accordion-item">
+							<a href="#" class="item-content item-link">
+								<div class="item-inner">
+									<div class="item-title">Veja o que achamos da sua sugestão</div>
+								</div>
+							</a>
+							<div class="accordion-item-content">
+								<div class="content-block contactform">
+									<form id="consultaSugestao">
+										<label>Nº Protocolo:</label>
+										<input id="numeroProtocolo" type="text" name="numeroProtocolo" value="" class="form_input required"/>
+										
+										<input type="submit" name="consultarSugestao" class="form_submit" id="consultarSugestao" onclick="consultarSugestao()" value="Consultar"/>
+									</form>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+							
+            </div>
+		</div>
+    </div>
+  </div>
+</div>

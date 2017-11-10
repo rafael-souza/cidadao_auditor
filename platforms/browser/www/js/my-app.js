@@ -713,7 +713,7 @@ function realizaLogout(){
 	window.localStorage.removeItem("nomePessoa");   
 	window.localStorage.removeItem("tipoOcorrencias"); 
 	window.localStorage.removeItem("totalDenuncia");
-	window.localStorage.removeItem("totalIdeia");
+	window.localStorage.removeItem("totalSugestao");
 	window.localStorage.removeItem("totalOcorrencia");         	
 	
     listaOcorrencias = [];
@@ -789,11 +789,11 @@ $$('.panel-left').on('opened', function () {
 		}
 		$('.numOcorrencia').text(totalOcorrencia);
 		
-		var totalIdeia = window.localStorage.getItem("totalIdeia");
-		if (totalIdeia == null){
-			totalIdeia = 0;
+		var totalSugestao = window.localStorage.getItem("totalSugestao");
+		if (totalSugestao == null){
+			totalSugestao = 0;
 		}
-		$('.numIdeia').text(totalIdeia);
+		$('.numSugestao').text(totalSugestao);
 		
 		var totalDenuncia = window.localStorage.getItem("totalDenuncia");
 		if (totalDenuncia == null){
@@ -950,29 +950,29 @@ function realizaEnvioOcorrencia(){
 
 
 /** abaixo os códigos personalizados */
-$$(document).on('pageInit', '.page[data-page="ideia"]', function (e) {
+$$(document).on('pageInit', '.page[data-page="sugestao"]', function (e) {
 	// verificando se o usuario está logado no sistema
 	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
 		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
-		$("#descIdeia").text("Você precisa estar logado para enviar suas ideias");
+		$("#descSugestao").text("Você precisa estar logado para enviar suas sugestões");
     }
 });  
 
 /**
-* Realiza o envio da ideia
+* Realiza o envio da Sugestao
 */
-function enviarIdeia(){
+function enviarSugestao(){
 	// verificando se informou os dados obrigatorios
-    if ($("#tituloIdeia").val() == ""){       
+    if ($("#tituloSugestao").val() == ""){       
         return false;        
     }
 
-    if ($("#descricaoIdeia").val() == ""){      
+    if ($("#descricaoSugestao").val() == ""){      
         return false;  
     }
 	
 	if (window.localStorage.getItem("email_usuario") == null){
-		myApp.alert("Você precisa estar logado para enviar suas ideias.", "Atenção!");
+		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
 		return false;
 	}
 
@@ -981,22 +981,22 @@ function enviarIdeia(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncIdeia = urlSync + "ideia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncSugestao = urlSync + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 
-    var ideia = new Object();
+    var sugestao = new Object();
     var pessoa = new Object();
     //tipoOcorrencia.descricao = $("#tipoOcorrencia option:selected").text();
     pessoa.email = window.localStorage.getItem("email_usuario");
-    ideia.pessoa = pessoa;
-	ideia.titulo = $("#tituloIdeia").val();
-	ideia.endereco = $("#enderecoIdeia").val();
-	ideia.descricao = $("#descricaoIdeia").val();
+    sugestao.pessoa = pessoa;
+	sugestao.titulo = $("#tituloSugestao").val();
+	sugestao.endereco = $("#enderecoSugestao").val();
+	sugestao.descricao = $("#descricaoSugestao").val();
 	
     // transformando o objeto em uma string json
-    var obj = JSON.stringify({ ideia: ideia });            
+    var obj = JSON.stringify({ sugestao: sugestao });            
     // enviando os dados
     $.ajax({
-        url: urlSyncIdeia,
+        url: urlSyncsugestao,
         type: 'POST',
         contentType: "application.mob/json; charset=utf-8",
         data: obj,
@@ -1004,18 +1004,18 @@ function enviarIdeia(){
         dataType: 'json',        
         success: function (data) { 
             myApp.alert(
-                'Ideia enviada com sucesso!\n' + 
+                'Sugestão enviada com sucesso!\n' + 
                 'PROTOCOLO\n' +
-                data.ideia.protocolo + "\n Guarde o nº do protocolo para consultar o que achamos da sua ideia!",
+                data.sugestao.protocolo + "\n Guarde o nº do protocolo para consultar o que achamos da sua sugestao!",
                 'Atenção!');
 				
 				// adicionando 1 no contador de denuncias
-			var totalIdeia = window.localStorage.getItem("totalIdeia");
-			if (totalIdeia == null){
-				totalIdeia = 0;
+			var totalSugestao = window.localStorage.getItem("totalSugestao");
+			if (totalSugestao == null){
+				totalSugestao = 0;
 			}
-			totalIdeia = totalIdeia + 1;
-			window.localStorage.setItem("totalIdeia", totalIdeia);
+			totalSugestao = totalSugestao + 1;
+			window.localStorage.setItem("totalSugestao", totalSugestao);
 				
         },
         
@@ -1034,7 +1034,7 @@ $$(document).on('pageInit', '.page[data-page="denuncia"]', function (e) {
 	// verificando se o usuario está logado no sistema
 	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
 		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
-		$("#descIdeia").text("Você precisa estar logado para enviar suas denúncias");
+		$("#descDenuncia").text("Você precisa estar logado para enviar suas denúncias");
     }
 });  
 
