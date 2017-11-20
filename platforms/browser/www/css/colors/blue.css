@@ -32,7 +32,7 @@ color:#375a70;
 }
 .list-block .swipeout-actions-left a,
 .list-block .swipeout-actions-right a {
-background: #375a70;
+	background: #375a70;
 }
 .contactform input.form_submit, .loginform input.form_submit, .commentform input.form_submit{ 
 	background-color:#375a70;

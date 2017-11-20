@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
-<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="apple-touch-startup-image-640x1096.png">
-<title>Cidadão Auditor</title>
-<link rel="stylesheet" href="css/framework7.css">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="css/colors/blue.css">
-<link type="text/css" rel="stylesheet" href="css/swipebox.css" />
-<link type="text/css" rel="stylesheet" href="css/animations.css" />
-<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700,900' rel='stylesheet' type='text/css'>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+	<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="apple-touch-startup-image-640x1096.png">
+	<title>Cidadão Auditor</title>
+	<link rel="stylesheet" href="css/framework7.css">
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="css/colors/blue.css">
+	<link type="text/css" rel="stylesheet" href="css/swipebox.css" />
+	<link type="text/css" rel="stylesheet" href="css/animations.css" />
+	<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700,900' rel='stylesheet' type='text/css'>
 </head>
 <body id="mobile_wrap">
 
@@ -32,10 +32,10 @@
 
             <nav class="user-nav">
 				<ul>
-                    <li><a href="ocorrencia.html" class="close-panel"><img src="images/icons/white/form.png" alt="" title="" /><span>Ocorrências</span><strong class="green numOcorrencia"></strong></a></li>
-                    <li><a href="sugestao.html" class="close-panel"><img src="images/icons/white/message.png" alt="" title="" /><span>Sugestões</span><strong class="blue numSugestao"></strong></a></li>
-					<li><a href="denuncia.html" class="close-panel"><img src="images/icons/white/denuncie.png" alt="" title="" /><span>Denúncias</span><strong class="blue numDenuncia"></strong></a></li>
-					<li><a href="#" data-popup=".popup-login" class="open-popup"><img src="images/icons/white/lock.png" alt="" title="" /><span>Entrar</span></a></li>
+                    <li><a href="ocorrencia.html" class="close-panel"><img src="images/icons/white/form.png" alt="" title="" /><span>Ocorrências</span></a></li>
+                    <li><a href="sugestao.html" class="close-panel"><img src="images/icons/white/message.png" alt="" title="" /><span>Sugestões</span></a></li>
+					<li><a href="denuncia.html" class="close-panel"><img src="images/icons/white/denuncie.png" alt="" title="" /><span>Denúncias</span></strong></a></li>
+					<li><a href="#" class="open-login"><img src="images/icons/white/lock.png" alt="" title="" /><span>Entrar</span></a></li>
                     <li><a href="#"  onclick="realizaLogout()" class="close-panel"><img src="images/icons/white/menu_close.png" alt="" title=""/><span>Sair</span></a></li>
                 </ul>
             </nav>
@@ -85,8 +85,8 @@
 						<input type="text" id="email" name="email" type="email" value="" class="form_input required email" placeholder="E-mail" />
 						<input type="password" id="senha" name="senha" value="" class="form_input required" placeholder="Senha" />
 						<div class="forgot_pass"><a href="#" data-popup=".popup-forgot" class="open-popup">Esqueceu sua senha?</a></div>
-						<input type="submit" name="submit" class="form_submit" id="login" value="Login"/>
 					</form>
+					<input type="submit" name="submit" class="form_submit" id="login" value="Login" onclick="realizaLogin()"/>
 					<div class="signup_bottom">
 						<p>Não Possui uma conta?</p>
 						<a href="#" data-popup=".popup-signup" class="open-popup">Cadastrar</a>        
@@ -107,14 +107,14 @@
 						<input type="text" id="emailCad" name="emailCad" value="" class="form_input required email" placeholder="E-mail" />
 						<input type="password" id="senhaCad" name="senhaCad" value="" class="form_input required" placeholder="Senha" />
 						<input type="password" id="senhaConfCad" name="senhaConfCad" value="" class="form_input required  equalTo(#senhaCad)" placeholder="Confirmar" />
-						<input type="submit" name="cadastrar" class="form_submit" id="cadastrar" value="Cadastrar" onclick="realizaCadastro()"/>
 					</form>
+					<input type="submit" name="cadastrar" class="form_submit" id="cadastrar" value="Cadastrar" onclick="realizaCadastro()"/>
 				</div>
 				<div class="close_loginpopup_button">
 					<a href="#" class="close-popup"><img src="images/icons/white/menu_close.png" alt="" title="" /></a>
 				</div>
-		</div>
-    </div>
+			</div>
+	</div>
     
     <!-- Login Popup -->
     <div class="popup popup-forgot">
@@ -124,8 +124,8 @@
 					<div class="loginform">
 						<form id="forgotFormulario" >
 							<input type="text" id="emailNovaSenha" name="emailNovaSenha" value="" class="form_input required" placeholder="E-mail" />
-							<input type="submit" name="submit" class="form_submit" id="enviarNovaSenha" value="Enviar nova Senha" onclick="enviarNovaSenha()"/>
 						</form>
+						<input type="submit" name="submit" class="form_submit" id="enviarNovaSenha" value="Enviar nova Senha" onclick="enviarNovaSenha()"/>
 						<div class="signup_bottom">
 							<p>Verifique seu e-mail e siga as instruções para visualizar sua nova senha.</p>
 						</div>

@@ -15,7 +15,9 @@ var myApp = new Framework7({
     template7Pages: true
 });
 
-var urlSync = 'http://192.168.0.101:8080/procity/soa/service/mobile.';
+var cidadesContratadas = ['FORMIGA'];
+var urlSync = "";
+var urlSyncFormiga = 'http://192.168.0.100:8080/cidadao_auditor/soa/service/mobile.';
 var listaOcorrencias = [];
 var listaTipoOcorrencias = [];
 var map;
@@ -38,20 +40,85 @@ $$(document).on('ajaxStart',function(e){myApp.showIndicator();});
 $$(document).on('ajaxComplete',function(){myApp.hideIndicator();});																																																																		
 
 $$(document).on('pageInit', function (e) {
-
+	
 	$(".swipebox").swipebox();
-	
-	$("#registerFormulario").validate();
-	$("#loginFormulario").validate();
-	$("#forgotFormulario").validate();
-
-	
 	$('a.backbutton').click(function(){
 		parent.history.back();
 		return false;
 	});
 	
+	verificaCidadeCidadao();
+	
 });
+
+
+$$('.open-login').on('click', function () {
+	myApp.popup('.popup-login');
+	verificaCidadeCidadao();
+});
+
+function verificaCidadeCidadao(){
+	// verificando se a cidade do cidadão possui contrato
+	if (window.localStorage.getItem("cidade") == "" || window.localStorage.getItem("cidade") == undefined){
+		if ( navigator.geolocation ) {      
+			function successInit(pos) {
+				latitude = pos.coords.latitude;
+				longitude = pos.coords.longitude;
+				// pegando o endereço            
+				var latlng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+				var geocoder = new google.maps.Geocoder();
+				geocoder.geocode({
+					'latLng': latlng
+				}, function(results, status) {
+					var city = results[0].address_components[2].short_name;
+						
+					// verificando se a cidade do cidadão possui o APP contratado
+					if (verificaCidadeContratada(city)){		
+						myApp.hideIndicator();
+						window.localStorage.setItem("cidade", city.toUpperCase());
+					} else {
+						myApp.hideIndicator();
+						myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+					}	
+				});                       
+			}
+			function failInit(error) {        
+				myApp.hideIndicator();			
+				myApp.alert('Não foi possível pegar sua posição através do GPS!\n' +
+				'Código: ' + error.code + '\n' +
+				'Mensagem: ' + error.message, 'Atenção!');
+			}
+			// Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
+			navigator.geolocation.getCurrentPosition(successInit, failInit, {maximumAge: 500000, enableHighAccuracy:true, timeout: 10000});
+		} else {
+			myApp.hideIndicator();			
+			myApp.alert('Verifique se sua internet e seu GPS estão ativados!', 'Atenção!');
+		}	
+	}
+	
+}
+
+/**
+* Verifica se a cidade do cidadão possui contrato
+*/
+function verificaCidadeContratada(cidade){
+	if (cidade != null && cidadesContratadas.indexOf(cidade.toUpperCase()) != -1){
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**
+* 
+*/
+function getUrlSync(){
+	var cidade = window.localStorage.getItem("cidade");
+	
+	if (cidade == "FORMIGA"){
+		return urlSyncFormiga;
+	} 
+}	
 
 /** abaixo os códigos personalizados */
 $$(document).on('pageInit', '.page[data-page="mapa"]', function (e) {
@@ -122,18 +189,25 @@ function buscaTipoOcorrencias(){
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync(window.localStorage.getItem("email_usuario"), window.localStorage.getItem("senha_usuario"));
 
-    var urlSyncOcorrencia = urlSync + "tipoOcorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario")  + ")";
+    var urlSyncOcorrencia = getUrlSync() + "tipoOcorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario")  + ")";
+	
+	myApp.showIndicator();
 
     // realiza a chamada no servidor
     $.ajax({
         url: urlSyncOcorrencia,
-        type: 'GET',
+        type: "GET",
+		contentType: "application.mob/json; charset=utf8",
         async: false,
         cache: false,
         timeout: 90000,        
         // retorno de sucesso da chamada
         success: function( data ) {
-            if (data.tipoOcorrencia != null){      
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.tipoOcorrencia != null){      
                 listaTipoOcorrencias = [];
                 // exibindo os marcadores no mapa
                 $.each(data.tipoOcorrencia, function(index, tipoOcorrencia) {    
@@ -143,9 +217,12 @@ function buscaTipoOcorrencias(){
                 // setando a lista de tipos de ocorrencia no localstorage
                 window.localStorage.setItem("tipoOcorrencias", listaTipoOcorrencias);
 				
+				myApp.hideIndicator();
+				
             } else {
                 // retornando que não encotrou a pessoa
-                data = $.parseJSON(data);
+                myApp.hideIndicator();
+				data = $.parseJSON(data);
                 exibeErroSincronizar(data);
                 return;          
             }
@@ -153,6 +230,7 @@ function buscaTipoOcorrencias(){
 
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return;
         }
@@ -166,26 +244,34 @@ function buscaTipoOcorrencias(){
 function buscarMinhasOcorrencias(colocarMarcadores){  
 
 	// verificando se possui email e senha cadastrados
-	if (window.localStorage.getItem("email_usuario") == '' || window.localStorage.getItem("email_usuario") == undefined){
+	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
 		return false;
 	}
 
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync(window.localStorage.getItem("email_usuario"), window.localStorage.getItem("senha_usuario"));
 
-    var urlSyncOcorrencia = urlSync + "ocorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncOcorrencia = getUrlSync() + "ocorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	
+	myApp.showIndicator();
 
     // realiza a chamada no servidor
     $.ajax({
         url: urlSyncOcorrencia,
-        type: 'GET',
+        type: "GET",
+		contentType: "application.mob/json; charset=utf8",
         async: false,
         cache: false,
         timeout: 90000,        
         // retorno de sucesso da chamada
         success: function( data ) {
             listaOcorrencias = [];
-            if (data.ocorrencia != null){                    
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.ocorrencia != null){   			
                 // exibindo os marcadores no mapa
                 $.each(data.ocorrencia, function(index, ocorrencia) {    
                     listaOcorrencias.push(ocorrencia);                                                  
@@ -194,9 +280,12 @@ function buscarMinhasOcorrencias(colocarMarcadores){
 				if (colocarMarcadores){
 					colocaMarcadoresMapa(); 
 				}
+				
+				myApp.hideIndicator();
                 
             } else {
                 // retornando que ouve um erro
+				myApp.hideIndicator();
                 data = $.parseJSON(data);
                 exibeErroSincronizar(data);
                 return;          
@@ -205,6 +294,7 @@ function buscarMinhasOcorrencias(colocarMarcadores){
 
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return;
         }
@@ -414,44 +504,112 @@ myApp.onPageBeforeInit('ocorrencia', function (page) {
 // listando os imoveis de trabalho
 $$(document).on('pageInit', '.page[data-page="ocorrencia"]', function (e) {
 	// limpando a variavel que controla a visualização das ocorrencias
-	window.localStorage.setItem("idOcorrencia", "");
+	window.localStorage.setItem("id_ocorrencia", "");
 	
-    var listaMinhasOcorrencias = $("#listaMinhasOcorrencias");
+   montaListagemOcorrencias();
+
+});
+
+function montaListagemOcorrencias(){
+	$('#listaMinhasOcorrencias li').remove('li');
+	var listaMinhasOcorrencias = $("#listaMinhasOcorrencias");
     var lista = '';
 
     if (listaOcorrencias.length > 0) {	
 		// listando todas as ocorrências fetias pelo usuário
         for (var i = 0; i < listaOcorrencias.length; i++) {
-            var ocorrencia = listaOcorrencias[i]; 
-			lista = lista + '<li class="swipeout"> <div class="swipeout-content item-content"> <div class="post_entry"><div class="post_date">';
-			lista = lista + '<span class="day">'+ ocorrencia.dataOcorrencia.substring(0,2) + '</span>';
-			lista = lista + '<div class="pr-aling-date"><span class="month">'+ getMesOcorrencia(ocorrencia.dataOcorrencia.substring(5,3)) + '</span></br>';
-			lista = lista + '<span class="year">'+ ocorrencia.dataOcorrencia.substring(10,6) + '</span></div></div>';
-			lista = lista + '<div class="post_title">';
-			lista = lista + '<h2><a href="#" onclick="visualizarOcorrencia('+ocorrencia.id+')">'
-			lista = lista + 'Tipo: ' + ocorrencia.descricaoTipo + '</br>';
-            lista = lista + 'Endereço: ' + ocorrencia.endereco + '</br>';
-            lista = lista + 'Status: ' + ocorrencia.statusOcorrencia.lookup + '</a></h2> </div>';
-            lista = lista + '<div class="post_swipe"><img src="images/swipe_more.png" alt="" title="" /></div>';
-            lista = lista + '</div></div></li>';
-            /*lista = lista + '<div class="swipeout-actions-right">';
-            lista = lista + '<a href="ocorrencia_detalhe.html" class="action1"><img src="images/icons/white/message.png" alt="" title="" /></a>';
-			lista = lista + '<a href="#" class="action1 open-popup" data-popup=".popup-social"><img src="images/icons/white/like.png" alt="" title="" /></a>';
-			lista = lista + '</div></li>';*/
+			if (listaOcorrencias[i] != null){
+				var ocorrencia = listaOcorrencias[i]; 
+				lista = lista + '<li class="swipeout"> <div class="swipeout-content item-content"> <div class="post_entry"><div class="post_date">';
+				lista = lista + '<span class="day">'+ ocorrencia.dataOcorrencia.substring(0,2) + '</span>';
+				lista = lista + '<div class="pr-aling-date"><span class="month">'+ getMesOcorrencia(ocorrencia.dataOcorrencia.substring(5,3)) + '</span></br>';
+				lista = lista + '<span class="year">'+ ocorrencia.dataOcorrencia.substring(10,6) + '</span></div></div>';
+				lista = lista + '<div class="post_title">';
+				lista = lista + '<h2><a href="#" onclick="visualizarOcorrencia('+ocorrencia.id+')">'
+				lista = lista + 'Tipo: ' + ocorrencia.descricaoTipo + '</br>';
+				lista = lista + 'Endereço: ' + ocorrencia.endereco + '</br>';
+				lista = lista + 'Status: ' + ocorrencia.statusOcorrencia.lookup + '</a></h2> </div>';
+				lista = lista + '<div class="post_swipe"><img src="images/swipe_more.png" alt="" title="" /></div>';
+				lista = lista + '</div></div>';
+				lista = lista + '<div class="swipeout-actions-right">';
+				lista = lista + '<a href="#" class="action1" onclick="visualizarOcorrencia('+ocorrencia.id+')"> <img src="images/icons/white/message.png" alt="" title="" /></a>';
+				lista = lista + '<a href="#" class="action2" onclick="removerOcorrencia('+ocorrencia.id+')"> <img src="images/icons/white/remover.png" alt="" title="" /></a>';
+				lista = lista + '</div></li>';
+			}
         }
 		listaMinhasOcorrencias.append(lista);
-    } else if (window.localStorage.getItem("email_usuario") == '' || window.localStorage.getItem("email_usuario") == undefined){
+    } else if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
 		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
 		$("#descOcorrencia").text("Você precisa estar logado para visualizar suas ocorrências");
 	}
+	
+}
 
-});
+function removerOcorrencia(id_ocorrencia){
+	myApp.confirm('Tem certeza que deseja remover essa ocorrência?', 'Atenção!', function () {
+		// verificando o status da ocorrencia para saber se pode ser removida
+		var ocorrencia;
+		var i;
+		//buscando pela ocorrencia na lista
+		for (i = 0; i < listaOcorrencias.length; i++) {
+			if (listaOcorrencias[i] != null && listaOcorrencias[i].id == id_ocorrencia){
+				ocorrencia = listaOcorrencias[i];
+				break;
+			}
+		}
+		
+		if (ocorrencia.statusOcorrencia.lookup != 'Em Aberto' ){
+			myApp.alert("Somente podem ser excluídas ocorrências Em Aberto!", "Atenção!");
+			return false;
+		}
+		
+		// montando os dados para remoção da ocorrência
+		// gerando a url de remoção dos dados
+		var urlSyncDeleteOcorrencia = getUrlSync() + "ocorrenciaman("+ id_ocorrencia +")";
+		urlSyncDeleteOcorrencia = urlSyncDeleteOcorrencia.replace("mobile.","");
+		
+		myApp.showIndicator();
+		
+		// enviando os dados
+		$.ajax({
+			url: urlSyncDeleteOcorrencia,
+			type: "DELETE",
+			//contentType: 'application.mob/json; charset=utf8',
+			async: false,
+			//dataType: 'json',        
+			success: function (data) { 
+
+				if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+					myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+					myApp.hideIndicator();
+					return false;
+				}
+				// removendo a ocorrencia da listagem
+				delete listaOcorrencias[i];
+				
+				montaListagemOcorrencias();
+				
+				myApp.hideIndicator();
+				
+				myApp.alert("Ocorrência removida com sucesso.", "Atenção!");
+				
+			},
+			
+			// retorno de erro da chamada
+			error: function(jqXHR, exception) {
+				trataErroSincronizacao(jqXHR, exception);
+				return false;
+			}
+
+		});
+	});
+}
 
 /**
 * Clique na lista de ocorrencias para visualizar uma determinada ocorrencia
 */
-function visualizarOcorrencia(idOcorrencia){
-	window.localStorage.setItem("idOcorrencia", idOcorrencia);
+function visualizarOcorrencia(id_ocorrencia){
+	window.localStorage.setItem("id_ocorrencia", id_ocorrencia);
 	mainView.router.loadPage("ocorrenciaDetalhe.html");
 }
 
@@ -460,7 +618,7 @@ function visualizarOcorrencia(idOcorrencia){
 */ 
 $$(document).on('pageInit', '.page[data-page="ocorrenciaDetalhe"]', function (e) {
 	// pegando o id da ocorrencia que deseja visualizarv
-	var id = window.localStorage.getItem("idOcorrencia");
+	var id = window.localStorage.getItem("id_ocorrencia");
 	
 	var ocorrencia;
 	
@@ -479,12 +637,77 @@ $$(document).on('pageInit', '.page[data-page="ocorrenciaDetalhe"]', function (e)
 		$('.fotoOcorrenciaDetalhe').append('<img src="' + ocorrencia.conteudoBinarioFoto + '" />'); 
 	}
 	
+	$('.id_ocorrencia').text(ocorrencia.id);
 	$('.tipoOcorrenciaDetalhe').append('<h2>' + ocorrencia.descricaoTipo + '</h2>');
 	$('.dataOcorrenciaDetalhe').text(ocorrencia.dataOcorrencia);
 	$('.enderecoOcorrenciaDetalhe').text(ocorrencia.endereco);
 	$('.statusOcorrenciaDetalhe').text(ocorrencia.statusOcorrencia.lookup);
 	$('.observacaoOcorrenciaDetalhe').text(ocorrencia.observacao);
 	$('.protocoloOcorrenciaDetalhe').text(ocorrencia.protocolo);
+	
+	// montando a lista dos comentarios ja realizados pelo usuario e pela prefeitura
+    // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+
+    // gerando a url de envio dos dados
+    var urlSyncComent = getUrlSync() + "historicoOcorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	urlSyncComent = urlSyncComent + "ocorrencia=" + ocorrencia.id;
+	
+    var historicoOcorrencia = new Object();
+	var ocorrenciaHistorico = new Object();
+	
+	ocorrenciaHistorico.id = ocorrencia.id;
+	historicoOcorrencia.ocorrencia = ocorrenciaHistorico;
+	
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ historicoOcorrencia: historicoOcorrencia });            
+	
+	myApp.showIndicator();
+
+    // enviando os dados
+    $.ajax({
+        url: urlSyncComent,
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        async: false,
+        dataType: "json",        
+        success: function (data) { 
+		
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.historicoOcorrencia != null){
+				// percorrendo o historio das ocorrencias para listagem na tela
+				var listaComentarios = $("#listaComentarios");
+				var lista = '';
+				
+				// exibindo os comentarios na tela
+                $.each(data.historicoOcorrencia, function(index, historicoOcorrencia) {    
+                
+					lista = lista + '<li class="comment_row">';
+					lista = lista + '<div class="comm_avatar"><img src="images/icons/black/user.png" alt="" title="" border="0" /></div>';
+					lista = lista + '<div class="comm_content"><p><b>Data: </b>' + historicoOcorrencia.dataHistorico + '<br/>';
+					lista = lista + '<b>Descrição: </b>' + historicoOcorrencia.observacao + '<br/>';
+					lista = lista + '<b>Responsável: </b><a href="#">' + historicoOcorrencia.responsavel + '</a></p></div></li>';
+				});
+				
+				listaComentarios.append(lista);	
+			}
+
+			myApp.hideIndicator();
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    });
 	
 });
 
@@ -610,12 +833,15 @@ function capturarFail(message) {
 * realiza a escolha de uma foto na galeria
 */
 function escolherFoto() {
-
-    var srcType = Camera.PictureSourceType.SAVEDPHOTOALBUM;
-    var options = setOptions(srcType);
+    //var srcType = Camera.PictureSourceType.SAVEDPHOTOALBUM;
+    //var options = setOptions(srcType); PHOTOLIBRARY
     var func = createNewFileEntry;
 
-	navigator.camera.getPicture(capturarSuccess, capturarFail, options);
+	navigator.camera.getPicture(capturarSuccess, capturarFail, 
+		{ 	quality: 50,
+			destinationType: Camera.DestinationType.DATA_URL,
+			sourceType : Camera.PictureSourceType.SAVEDPHOTOALBUM}
+	);
 	
 }
 
@@ -650,44 +876,62 @@ function createNewFileEntry(imgUri) {
     }, onErrorResolveUrl);
 }
 
-/**
-* Ação do botão de Login
-*/
-$( "#loginFormulario" ).submit(function( event ) {
-	if($("#email").val() != '' && $("#senha").val() != '') {
-		realizaLogin();
-	}
-});
-
 /*
 * Realiza o login do usuário.
 */
 function realizaLogin(){
+	
+	if ($("#email").val() == "" ){
+		myApp.alert("Você deve informar o seu e-mail!", "Atenção!");
+		return false;
+	}
+	
+	if ($("#senha").val() == "") {
+		myApp.alert("Você deve informar sua senha!", "Atenção!");
+		return false;
+	}
+	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor!\nSolicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
           
 	// gerando o token para o acesso ao servidor
 	token = gerarTokenSync($("#email").val(), $("#senha").val());
 
-	var urlSyncPessoa = urlSync + "pessoa?token=" + token + "(" + $("#email").val() + ")";
+	var urlSyncPessoa = getUrlSync() + "pessoa?token=" + token + "(" + $("#email").val() + ")";
+	
+	myApp.showIndicator();
 
 	// realiza a chamada no servidor
 	$.ajax({
 		url: urlSyncPessoa,
-		type: 'GET',
+		type: "GET",
+		contentType: "application.mob/json; charset=utf8",
 		async: false,
 		cache: false,
 		timeout: 90000,        
 		// retorno de sucesso da chamada
 		success: function( data ) {
-			if (data.pessoa != null){                    
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else 	if (data.pessoa != null){                    
 				// armazenando os dados                    
 				window.localStorage.setItem("email_usuario", data.pessoa[0].email);
 				window.localStorage.setItem("senha_usuario", $("#senha").val());
-				window.localStorage.setItem("nomePessoa", data.pessoa[0].nome);
+				window.localStorage.setItem("nome_pessoa", data.pessoa[0].nome);
 				
-				mainView.router.loadPage("index.html");
-					
+				myApp.hideIndicator();
+				myApp.closeModal('.popup-login');	
+				myApp.closePanel();
+
 			} else {
 				// retornando que não encotrou a pessoa
+				myApp.hideIndicator();
 				data = $.parseJSON(data);
 				exibeErroSincronizar(data);
 				return;          
@@ -696,12 +940,9 @@ function realizaLogin(){
 
 		// retorno de erro da chamada
 		error: function(jqXHR, exception) {
-			// escondendo o loading
 			myApp.hideIndicator();
-			
 			// solicita ao usuário informar um login e uma senha                
 			myApp.alert('Email e/ou senha incorretos!', 'Atenção!');
-			
 			return;
 		}
 	});
@@ -711,11 +952,9 @@ function realizaLogout(){
 	// removendo os dados armazenados
     window.localStorage.removeItem("email_usuario");
     window.localStorage.removeItem("senha_usuario");   
-	window.localStorage.removeItem("nomePessoa");   
-	window.localStorage.removeItem("tipoOcorrencias"); 
-	window.localStorage.removeItem("totalDenuncia");
-	window.localStorage.removeItem("totalSugestao");
-	window.localStorage.removeItem("totalOcorrencia");         	
+	window.localStorage.removeItem("nome_pessoa");   
+	window.localStorage.removeItem("tipoOcorrencias");   
+	window.localStorage.removeItem("cidade");  	
 	
     listaOcorrencias = [];
     listaTipoOcorrencias = [];
@@ -732,12 +971,21 @@ function realizaLogout(){
 */
 function realizaCadastro(){
 	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
   // verificando se informou os dados obrigatorios
-    if ($("#nomeCad").val() == ""){                       
+    if ($("#nomeCad").val() == ""){    
+		myApp.alert("Você deve informar o seu nome completo!", "Atenção!");
         return false;        
     }
 
-    if ($("#emailCad").val() == ""){                       
+    if ($("#emailCad").val() == ""){
+		myApp.alert("Você deve informar o seu e-mail!", "Atenção!");
         return false;   
     }
 
@@ -751,6 +999,7 @@ function realizaCadastro(){
     }
 
     if ($("#senhaCad").val() == ""){     
+		myApp.alert("Você deve informar a sua senha!", "Atenção!");
         return false;  
     }
 	
@@ -761,11 +1010,18 @@ function realizaCadastro(){
         return false;   
     }	
 	
+	if ($("#cidade option:selected").val() == 0){ 
+		myApp.alert(
+            'Você deve informar a sua cidade!',
+            'Atenção!');       
+        return false;
+	}
+	
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync($("#emailCad").val(), $("#senhaCad").val());    
 
     // gerando a url de envio dos dados
-    var urlSyncPessoaCad = urlSync + "pessoa?token=" + token + "(" + $("#emailCad").val() + ")cadastro";
+    var urlSyncPessoaCad = getUrlSync() + "pessoa?token=" + token + "(" + $("#emailCad").val() + ")cadastro";
 
     var pessoa = new Object();
     pessoa.email = $("#emailCad").val();
@@ -773,31 +1029,42 @@ function realizaCadastro(){
     pessoa.nome = $("#nomeCad").val();
 
     // transformando o objeto em uma string json
-    var obj = JSON.stringify({ pessoa: pessoa });            
+    var obj = JSON.stringify({ pessoa: pessoa }); 
+			
+	myApp.showIndicator();
     // enviando os dados
     $.ajax({
         url: urlSyncPessoaCad,
-        type: 'POST',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "POST",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
-        async: false,
-        dataType: 'json',        
+        //async: false,
+        dataType: "json",        
         success: function (data) {
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}
+			
 			// armazenando os dados                    
-			window.localStorage.setItem("email_usuario", data.pessoa[0].email);
+			window.localStorage.setItem("email_usuario", data.pessoa.email);
 			window.localStorage.setItem("senha_usuario", $("#senha").val());
-			window.localStorage.setItem("nomePessoa", data.pessoa[0].nome);
+			window.localStorage.setItem("nome_pessoa", data.pessoa.nome);
 			
 			$(".user_details p").remove('p')
-			$(".user_details").append('<p>Olá, <span>'+ data.pessoa[0].nome.split(" ")[0] +'</span></p>');
+			$(".user_details").append('<p>Olá, <span>'+ data.pessoa.nome.split(" ")[0] +'</span></p>');
 			
 			myApp.hideIndicator();
-
-			mainView.router.loadPage("index.html");
+			myApp.closeModal('.popup-signup');
+			myApp.closeModal('.popup-login');	
+			myApp.closePanel();
         },
         
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return false;
         }
@@ -806,31 +1073,13 @@ function realizaCadastro(){
 }
 
 $$('.panel-left').on('opened', function () {
-	if (window.localStorage.getItem("nomePessoa") != '' || window.localStorage.getItem("nomePessoa") != undefined){
+	if (window.localStorage.getItem("nome_pessoa") != undefined){
 	
 		if ($(".user_details p").length == 0){
 			$(".user_details p").remove('p')
-			$(".user_details").append('<p>Olá, <span>'+ window.localStorage.getItem("nomePessoa").split(" ")[0] +'</span></p>');
+			$(".user_details").append('<p>Olá, <span>'+ window.localStorage.getItem("nome_pessoa").split(" ")[0] +'</span></p>');
 		}
-		
-		var totalOcorrencia = window.localStorage.getItem("totalOcorrencia");
-		if (totalOcorrencia == null){
-			totalOcorrencia = 0;
-		}
-		$('.numOcorrencia').text(totalOcorrencia);
-		
-		var totalSugestao = window.localStorage.getItem("totalSugestao");
-		if (totalSugestao == null){
-			totalSugestao = 0;
-		}
-		$('.numSugestao').text(totalSugestao);
-		
-		var totalDenuncia = window.localStorage.getItem("totalDenuncia");
-		if (totalDenuncia == null){
-			totalDenuncia = 0;
-		}
-		$('.numDenuncia').text(totalDenuncia);
-		
+	
 	}
 });
 
@@ -899,6 +1148,13 @@ function confirmaEndereco(){
 */
 function enviarOcorrencia(){
 	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
 	if ($("#tipoOcorrencia option:selected").val() == 0){ 
 		myApp.alert("O Tipo da Ocorrência deve ser informado.", "Atenção!");
 		return false;
@@ -924,32 +1180,38 @@ function realizaEnvioOcorrencia(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncOcorrenciaCad = urlSync + "ocorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncOcorrenciaCad = getUrlSync() + "ocorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 
     var ocorrencia = new Object();
     var pessoa = new Object();
-    var tipoOcorrencia = new Object();
-    tipoOcorrencia.id = $("#tipoOcorrencia option:selected").val();
-    //tipoOcorrencia.descricao = $("#tipoOcorrencia option:selected").text();
+  
     pessoa.email = window.localStorage.getItem("email_usuario");
     ocorrencia.pessoa = pessoa;
-    ocorrencia.tipoOcorrencia = tipoOcorrencia;
+    ocorrencia.idTipo = $("#tipoOcorrencia option:selected").val();
     ocorrencia.observacao = $("#observacao").val();    
-    ocorrencia.fotoApp =  $("#fotoOcorrencia").find("img").prop("src");
+	ocorrencia.fotoApp = $("#fotoOcorrencia").find("img").prop("src");
     ocorrencia.latitude = latitude;
     ocorrencia.longitude = longitude;
+	ocorrencia.endereco = $("#endereco").val();
 
     // transformando o objeto em uma string json
     var obj = JSON.stringify({ ocorrencia: ocorrencia });            
+	myApp.showIndicator();
     // enviando os dados
     $.ajax({
         url: urlSyncOcorrenciaCad,
-        type: 'POST',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "POST",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
-        async: false,
-        dataType: 'json',        
+        //async: false,
+        dataType: "json",      
         success: function (data) {
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}
 
             // enviando o alerta ao usuário com o numero do protocolo
             myApp.alert(
@@ -957,22 +1219,17 @@ function realizaEnvioOcorrencia(){
                 'PROTOCOLO\n' +
                 data.ocorrencia.protocolo,
                 'Atenção!'); 
-
-			// adicionando 1 no contador de ocorrências
-			var totalOcorrencia = window.localStorage.getItem("totalOcorrencia");
-			if (totalOcorrencia == null){
-				totalOcorrencia = listaOcorrencias.length;
-			}
-			totalOcorrencia = totalOcorrencia + 1;
-			window.localStorage.setItem("totalOcorrencia", totalOcorrencia);
 			
 			// adicionando na lista local
 			listaOcorrencias.push(data.ocorrencia);
+			
+			myApp.hideIndicator();
             
         },
         
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return false;
         }
@@ -995,6 +1252,14 @@ $$(document).on('pageInit', '.page[data-page="sugestao"]', function (e) {
 * Realiza o envio da Sugestao
 */
 function enviarSugestao(){
+	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
 		return false;
@@ -1016,7 +1281,7 @@ function enviarSugestao(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncSugestao = urlSync + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncSugestao = getUrlSync() + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 
     var sugestao = new Object();
     var pessoa = new Object();
@@ -1029,34 +1294,37 @@ function enviarSugestao(){
 	sugestao.descricao = $("#descricaoSugestao").val();
 	
     // transformando o objeto em uma string json
-    var obj = JSON.stringify({ sugestao: sugestao });            
+    var obj = JSON.stringify({ sugestao: sugestao }); 
+	myApp.showIndicator();	
     // enviando os dados
     $.ajax({
         url: urlSyncSugestao,
-        type: 'POST',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "POST",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
-        async: false,
-        dataType: 'json',        
+        //async: false,
+        dataType: "json",        
         success: function (data) { 
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}
+		
             myApp.alert(
                 'Sugestão enviada com sucesso!\n' + 
                 'PROTOCOLO\n' +
                 data.sugestao.protocolo + "\n Guarde o nº do protocolo para consultar o que achamos da sua sugestao!",
                 'Atenção!');
 				
-				// adicionando 1 no contador de denuncias
-			var totalSugestao = window.localStorage.getItem("totalSugestao");
-			if (totalSugestao == null){
-				totalSugestao = 0;
-			}
-			totalSugestao = totalSugestao + 1;
-			window.localStorage.setItem("totalSugestao", totalSugestao);
+			myApp.hideIndicator();
 				
         },
         
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return false;
         }
@@ -1070,12 +1338,19 @@ function enviarSugestao(){
 */
 function consultarSugestao(){
 	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
 		return false;
 	}
 	
-	if ($("#numeroProtocoloSugestao").val == ''){
+	if ($("#numeroProtocoloSugestao").val == ""){
 		myApp.alert("Você deve informar o nº do protocolo.", "Atenção!");
 		return false;
 	}
@@ -1085,35 +1360,42 @@ function consultarSugestao(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncConsultaSugestao = urlSync + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncConsultaSugestao = getUrlSync() + "sugestao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 	urlSyncConsultaSugestao = urlSyncConsultaSugestao + "protocolo=" + $("#numeroProtocoloSugestao").val();
 
     var sugestao = new Object();
 	sugestao.protocolo = $("#numeroProtocoloSugestao").val();
 	
     // transformando o objeto em uma string json
-    var obj = JSON.stringify({ sugestao: sugestao });            
+    var obj = JSON.stringify({ sugestao: sugestao }); 
+	myApp.showIndicator();
     // enviando os dados
     $.ajax({
         url: urlSyncConsultaSugestao,
-        type: 'GET',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
         async: false,
-        dataType: 'json',        
+        dataType: "json",        
         success: function (data) { 
 			var texto;
-			if (data.sugestao[0].observacao != null) {
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.sugestao[0].observacao != null) {
 				texto =  data.sugestao[0].observacao;
 			} else {
 				texto = "Sua Sugestão ainda não foi avaliada, por favor aguarde!";
 			}
 			$("#descricaoConsulta").text(texto);
+			myApp.hideIndicator();
 			myApp.pickerModal('.picker-info-consulta')
         },
         
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return false;
         }
@@ -1134,6 +1416,13 @@ $$(document).on('pageInit', '.page[data-page="denuncia"]', function (e) {
 /**
 */
 function enviarDenuncia(){
+	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
 	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas denúncias.", "Atenção!");
@@ -1156,7 +1445,7 @@ function enviarDenuncia(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncDenuncia = urlSync + "denuncia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncDenuncia = getUrlSync() + "denuncia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 
     var denuncia = new Object();
     var pessoa = new Object();
@@ -1169,37 +1458,37 @@ function enviarDenuncia(){
 	denuncia.titulo = $("#tituloDenuncia").val();
 	denuncia.endereco = $("#enderecoDenuncia").val();
 	denuncia.descricao = $("#descricaoDenuncia").val();
-	
+	myApp.showIndicator();
     // transformando o objeto em uma string json
     var obj = JSON.stringify({ denuncia: denuncia });            
     // enviando os dados
     $.ajax({
         url: urlSyncDenuncia,
-        type: 'POST',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "POST",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
-        async: false,
-        dataType: 'json',        
+        //async: false,
+        dataType: "json",        
         success: function (data) { 
-            myApp.alert(
+            if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}			
+			
+			myApp.alert(
                 'Denúncia enviada com sucesso!\n' + 
                 'PROTOCOLO\n' +
                 data.denuncia.protocolo + "\n Guarde o nº do protocolo para consultar o andamento de sua denúncia!",
                 'Atenção!');
-			
-			// adicionando 1 no contador de denuncias
-			var totalDenuncia = window.localStorage.getItem("totalDenuncia");
-			if (totalDenuncia == null){
-				totalDenuncia = 0;
-			}
-			totalDenuncia = totalDenuncia + 1;
-			window.localStorage.setItem("totalDenuncia", totalDenuncia);
-				
+		
+			myApp.hideIndicator();
 				
         },
         
         // retorno de erro da chamada
         error: function(jqXHR, exception) {
+			myApp.hideIndicator();
             trataErroSincronizacao(jqXHR, exception);
             return false;
         }
@@ -1211,12 +1500,20 @@ function enviarDenuncia(){
 *
 */
 function consultarDenuncia(){
+	
+	// verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
 		return false;
 	}
 	
-	if ($("#numeroProtocoloDenuncia").val == ''){
+	if ($("#numeroProtocoloDenuncia").val == ""){
 		myApp.alert("Você deve informar o nº do protocolo.", "Atenção!");
 		return false;
 	}
@@ -1226,32 +1523,222 @@ function consultarDenuncia(){
         window.localStorage.getItem("senha_usuario"));    
 
     // gerando a url de envio dos dados
-    var urlSyncConsultaDenuncia = urlSync + "denuncia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+    var urlSyncConsultaDenuncia = getUrlSync() + "denuncia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
 	urlSyncConsultaDenuncia = urlSyncConsultaDenuncia + "protocolo=" + $("#numeroProtocoloDenuncia").val();
 	
     var denuncia = new Object();
 	denuncia.protocolo = $("#numeroProtocoloDenuncia").val();
 
     // transformando o objeto em uma string json
-    var obj = JSON.stringify({ denuncia: denuncia });            
+    var obj = JSON.stringify({ denuncia: denuncia });
+	myApp.showIndicator();	
     // enviando os dados
     $.ajax({
         url: urlSyncConsultaDenuncia,
-        type: 'GET',
-        contentType: "application.mob/json; charset=utf-8",
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
         data: obj,
         async: false,
-        dataType: 'json',        
+        dataType: "json",        
         success: function (data) { 
 			var texto;
-			if (data.denuncia[0].observacao != null) {
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.denuncia[0].observacao != null) {
 				texto = data.denuncia[0].observacao;
 			} else {
 				texto = "Sua denúncia ainda não foi avaliada, por favor aguarde!";
 			}
 			
 			$("#descricaoConsulta").text(texto);
+			myApp.hideIndicator();
 			myApp.pickerModal('.picker-info-consulta')
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    }); 
+	
+}
+
+
+/**
+* Realiza o envio de um comentário
+*/
+function enviarComentario(){
+	if (window.localStorage.getItem("email_usuario") == null){
+		myApp.alert("Você precisa estar logado para enviar um comentário.", "Atenção!");
+		return false;
+	}
+	
+	// verificando se informou os dados obrigatorios
+    if ($("#comentario").val() == ""){  
+		myApp.alert("Você deve informar o seu comentário", "Atenção!");
+        return false;        
+    }
+
+    // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+
+    // gerando a url de envio dos dados
+    var urlSyncComent = getUrlSync() + "historicoOcorrencia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+
+    var historicoOcorrencia = new Object();
+	var ocorrencia = new Object();
+	historicoOcorrencia.ocorrencia = ocorrencia;
+	historicoOcorrencia.idOcorrencia = $('.id_ocorrencia').text()
+	historicoOcorrencia.observacao = $("#comentario").val();
+	historicoOcorrencia.responsavel = window.localStorage.getItem("nome_pessoa");
+	
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ historicoOcorrencia: historicoOcorrencia });            
+	
+	myApp.showIndicator();
+    // enviando os dados
+    $.ajax({
+        url: urlSyncComent,
+        type: "POST",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        //async: false,
+        dataType: "json",        
+        success: function (data) { 
+		
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.historicoOcorrencia != null){
+			   
+				// colocando o comentario na listagem
+				var listaComentarios = $("#listaComentarios");
+				var lista = '';
+					
+				// exibindo os comentarios na tela
+				lista = lista + '<li class="comment_row">';
+				lista = lista + '<div class="comm_avatar"><img src="images/icons/black/user.png" alt="" title="" border="0" /></div>';
+				lista = lista + '<div class="comm_content"><p><b>Data: </b>' + data.historicoOcorrencia.dataHistorico + '<br/>';
+				lista = lista + '<b>Descrição: </b>' + data.historicoOcorrencia.observacao + '<br/>';
+				lista = lista + '<b>Responsável: </b><a href="#">' + data.historicoOcorrencia.responsavel + '</a></p></div></li>';
+				listaComentarios.append(lista);	
+				
+				myApp.hideIndicator();
+				
+				myApp.alert(
+					'Comentário enviado com sucesso!',
+					'Atenção!');
+			}
+			
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    });   	
+	
+}
+
+
+function enviarNovaSenha(){
+	
+    // verificando se a cidade do cidadão tem nossos serviços contratados
+	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		return false;
+	}
+
+	
+	
+	if ($("#emailNovaSenha").val() == ""){
+		myApp.alert("Você deve informar o seu e-mail de cadastro.", "Atenção!");
+		return false;
+	}
+	
+	 // gerando um token ficticio
+    token = gerarTokenSync($("#emailNovaSenha").val(), "123");    
+
+    // gerando a url de envio dos dados
+    var urlSyncNovaSenha = getUrlSync() + "pessoa?token=" + token + "(" + $("#emailNovaSenha").val() + ")";
+	urlSyncNovaSenha = urlSyncNovaSenha + "recuperar";
+	
+    var pessoa = new Object();
+	pessoa.email = $("#emailNovaSenha").val();
+
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ pessoa: pessoa });   
+	myApp.showIndicator();	
+    // enviando os dados
+    $.ajax({
+        url: urlSyncNovaSenha,
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        async: false,
+        dataType: "json",        
+        success: function (data) { 
+		    if (data.messages != null && data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Desculpe, mas o e-mail informado não foi encontrado!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}
+			realizaAlteracaoSenha(data.pessoa[0]);
+			
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    }); 	
+}
+
+function realizaAlteracaoSenha(pessoa){	
+
+
+	// gerando um token ficticio
+    token = gerarTokenSync($("#emailNovaSenha").val(), "123");    
+
+    // gerando a url de envio dos dados
+    var urlSyncAlterarSenha = getUrlSync() + "pessoa?token=" + token + "(" + $("#emailNovaSenha").val() + ")";
+	urlSyncAlterarSenha = urlSyncAlterarSenha + "alterarSenha";
+	
+    var pessoa = new Object();
+	pessoa.email = $("#emailNovaSenha").val();
+	
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ pessoa: pessoa });            
+    // enviando os dados
+    $.ajax({
+        url: urlSyncAlterarSenha,
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        async: false,
+        dataType: "json",        
+        success: function (data) {
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	}
+			
+			myApp.hideIndicator();
+			myApp.alert("A sua nova senha foi enviada para o e-mail informado.", "Atenção!");
+			
         },
         
         // retorno de erro da chamada
@@ -1261,5 +1748,4 @@ function consultarDenuncia(){
         }
 
     }); 
-	
 }

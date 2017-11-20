@@ -1061,10 +1061,10 @@ color: #000;
 text-align:center;
 }
 .list-block .swipeout-actions-right a:nth-child(1){
-background:#833545;
+background:#375a70;
 }
 .list-block .swipeout-actions-right a:nth-child(2){
-background:#6f2736;
+background:#1D4C69;
 }
 .list-block .swipeout-actions-right a:nth-child(3){
 background:#4d1722;
@@ -1872,6 +1872,13 @@ line-height:28px;
 .tituloDetalhe {
 	line-height: 0px !important;
 }
+
+.selectCidade{
+    width: 98%;
+    border: 1px solid #45535d;
+	color: #b7bec2;
+}
+
 
 /* definições da info window do mapa */
 .gm-style-iw {

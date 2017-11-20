@@ -24,6 +24,8 @@
                  
 				<div class="page_content"> 
 					<div class="entry">
+						<p class="idOcorrencia" style="display: none;">
+						
 						<p class="tituloDetalhe"><b>Data:</b></p>
 						<p class="dataOcorrenciaDetalhe">
 							Data da Ocorrência
@@ -51,6 +53,37 @@
 					</div>
 				</div>
             
+			</div>
+			
+
+			<div class="page_content"> 
+          
+				<div class="buttons-row">
+					<a href="#tab1" class="tab-link active button">Comentar</a>
+					<a href="#tab2" class="tab-link button">Comentários</a>
+				</div>
+			  
+				<div class="tabs-animated-wrap">
+					<div class="tabs">
+						<div id="tab1" class="tab active">
+							<div class="commentform">
+								<form id="comentarioForm">
+									<label>Comentário:</label>
+									<textarea name="comentario" id="comentario" class="form_textarea" rows="" cols=""></textarea>
+								</form>
+								<center>
+									<input type="submit" name="enviarComentario" class="form_submit" id="enviarComentario" style="width:90%" onclick="enviarComentario()" value="Enviar" />
+								</center>
+							</div>
+						</div>
+
+						<div id="tab2" class="tab">
+							<ul class="comments" id="listaComentarios">
+							
+							</ul>
+						</div> 
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
