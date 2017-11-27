@@ -17,7 +17,7 @@ var myApp = new Framework7({
 
 var cidadesContratadas = ['FORMIGA'];
 var urlSync = "";
-var urlSyncFormiga = 'http://192.168.0.100:8080/cidadao_auditor/soa/service/mobile.';
+var urlSyncFormiga = 'http://192.168.0.102:8080/cidadao_auditor/soa/service/mobile.';
 var listaOcorrencias = [];
 var listaTipoOcorrencias = [];
 var map;
@@ -766,9 +766,27 @@ $$(document).on('pageInit', '.page[data-page="novaOcorrencia"]', function (e) {
 	
 	// colocando a imagem da foto padrao
     $('#fotoOcorrencia').append('<img src="images/nenhuma_foto.png" />');       
-			
+		
+	var inseriuGroup = false;
+	var optGroup = 0;
+	var nomeGroup = '';
     // inserindo os valores dos tipos de ocorrencia
     for (var i = 0; i < listaTipoOcorrencias.length; i++){  
+		
+		// verificando se trocou de secretaria
+	/*	if (nomeGroup != '' && nomeGroup != listaTipoOcorrencias[i].secretaria.nome){
+			inseriuGroup = false;
+			optGroup = optGroup + 1;
+		}
+
+		if (inseriuGroup == false) {
+			myApp.smartSelectAddOption('.smart-select select', ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '"></optgroup>');
+			inseriuGroup == true;
+			nomeGroup = listaTipoOcorrencias[i].secretaria.nome;
+		}
+		
+		myApp.smartSelectAddOption($$('.smart-select select optigroup').eq(optGroup), '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
+*/
 		myApp.smartSelectAddOption('.smart-select select', '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
     }
 	
@@ -1008,14 +1026,7 @@ function realizaCadastro(){
             'A senha digitada não confere com a confirmação!',
             'Atenção!');       
         return false;   
-    }	
-	
-	if ($("#cidade option:selected").val() == 0){ 
-		myApp.alert(
-            'Você deve informar a sua cidade!',
-            'Atenção!');       
-        return false;
-	}
+    }
 	
     // gerando o token para o acesso ao servidor
     token = gerarTokenSync($("#emailCad").val(), $("#senhaCad").val());    
