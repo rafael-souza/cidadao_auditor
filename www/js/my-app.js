@@ -17,7 +17,7 @@ var myApp = new Framework7({
 
 var cidadesContratadas = ['FORMIGA'];
 var urlSync = "";
-var urlSyncFormiga = 'http://192.168.0.102:8080/cidadao_auditor/soa/service/mobile.';
+var urlSyncFormiga = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
 var listaOcorrencias = [];
 var listaTipoOcorrencias = [];
 var map;
@@ -171,6 +171,39 @@ $$(document).on('pageInit', '.page[data-page="mapa"]', function (e) {
         var center = map.getCenter();
         google.maps.event.trigger(map, "resize");
         map.setCenter(center);
+		
+		// colocando a legenda
+		var iconBase = 'http://maps.google.com/mapfiles/ms/micons/';
+        var icons = {
+          em_aberto: {
+            name: 'Em Aberto',
+            icon: iconBase + 'red-dot.png'
+          },
+          encaminhada: {
+            name: 'Encaminhada',
+            icon: iconBase + 'blue-dot.png'
+          },
+          em_analise: {
+            name: 'Em Análise',
+            icon: iconBase + 'yellow-dot.png'
+          },
+		  concluida: {
+            name: 'Concluída',
+            icon: iconBase + 'green-dot.png'
+          }
+        };
+	
+		var legend = document.getElementById('legend');
+        for (var key in icons) {
+			var type = icons[key];
+			var name = type.name;
+			var icon = type.icon;
+			var div = document.createElement('div');
+			div.innerHTML = '<img src="' + icon + '"> ' + name;
+			legend.appendChild(div);
+        }
+
+        map.controls[google.maps.ControlPosition.RIGHT_TOP].push(legend);
 
         buscarMinhasOcorrencias(true);
     }
@@ -765,30 +798,38 @@ $$(document).on('pageInit', '.page[data-page="novaOcorrencia"]', function (e) {
     $("#tipoOcorrencia").find("option").remove().end();
 	
 	// colocando a imagem da foto padrao
+	$('#fotoOcorrencia').empty();
     $('#fotoOcorrencia').append('<img src="images/nenhuma_foto.png" />');       
 		
 	var inseriuGroup = false;
 	var optGroup = 0;
 	var nomeGroup = '';
+	var lista = '';
     // inserindo os valores dos tipos de ocorrencia
     for (var i = 0; i < listaTipoOcorrencias.length; i++){  
 		
 		// verificando se trocou de secretaria
-	/*	if (nomeGroup != '' && nomeGroup != listaTipoOcorrencias[i].secretaria.nome){
+		if (nomeGroup != '' && nomeGroup != listaTipoOcorrencias[i].secretaria.nome){
 			inseriuGroup = false;
 			optGroup = optGroup + 1;
+			lista = lista + '</optgroup>';
 		}
 
 		if (inseriuGroup == false) {
-			myApp.smartSelectAddOption('.smart-select select', ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '"></optgroup>');
+			lista = lista + ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '">';
+			//myApp.smartSelectAddOption('.smart-select select', ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '"></optgroup>');
 			inseriuGroup == true;
 			nomeGroup = listaTipoOcorrencias[i].secretaria.nome;
 		}
 		
-		myApp.smartSelectAddOption($$('.smart-select select optigroup').eq(optGroup), '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
-*/
-		myApp.smartSelectAddOption('.smart-select select', '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
+		lista = lista + '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>'
+
+		//myApp.smartSelectAddOption($$('.smart-select select optigroup').eq(optGroup), '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
+
+		//myApp.smartSelectAddOption('.smart-select select', '<option value=' + listaTipoOcorrencias[i].id +'>'+listaTipoOcorrencias[i].descricao +'</option>');     
     }
+	
+	myApp.smartSelectAddOption('.smart-select select', lista);
 	
 	// pegando o endereço atual 
 	if ( navigator.geolocation ) {      
