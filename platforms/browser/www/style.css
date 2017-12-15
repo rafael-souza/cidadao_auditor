@@ -1765,91 +1765,121 @@ padding:0px 15px;
 /* 14. MEDIA QUERIES */
 /*===============================================*/
 @media screen and (max-width: 680px) {
-.swiper-slide span{
-margin:0 0 10px 0;
-padding:70px 0 0 0;
-font-size:55px;
-line-height:60px;
-} 
-.swiper-slide span.subtitle{
-margin:0px 0 10px 0;
-font-size:22px;
-line-height:22px;
-} 
-a.swiper_read_more{
-padding:10px 20px;
-margin:20px 0 0 0;
-font-size:16px;
-}
+	.swiper-slide span{
+		margin:0 0 10px 0;
+		padding:70px 0 0 0;
+		font-size:55px;
+		line-height:60px;
+	} 
+	.swiper-slide span.subtitle{
+		margin:0px 0 10px 0;
+		font-size:22px;
+		line-height:22px;
+	} 
+	a.swiper_read_more{
+		padding:10px 20px;
+		margin:20px 0 0 0;
+		font-size:16px;
+	}
+
+	/* definições da info window do mapa */
+	.gm-style-iw {
+		width: 280px !important;
+	}
+
 }	
+
+@media (max-device-width: 1280px) {
+	/* definições da info window do mapa */
+	.gm-style-iw {
+		width: 280px !important;
+	}
+}
+
+/* Portrait */
+@media (max-device-width: 800px) { 
+/* definições da info window do mapa */
+	.gm-style-iw {
+		width: 280px !important;
+	}
+}
+
+
 @media screen and (max-width: 480px) {
-.toolbar {
-height: 55px;
+	.toolbar {
+		height: 55px;
+	}
+	ul.toolbar_icons li img{
+		margin:5px 0 0 0;
+	}
+	ul.toolbar_icons li.menuicon{
+		padding:3.5% 1%;
+		margin:0 1%;
+	}
+	.close_popup_button a{
+		left:40%;
+	}
+	.swiper-container {
+		height: 95%;
+	}
+	.swiper-slide span{
+		margin:0 0 10px 0;
+		padding:70px 0 0 0;
+		font-size:48px;
+		line-height:50px;
+	} 
+	.swiper-slide span.subtitle{
+		margin:0px 0 10px 0;
+		font-size:20px;
+		line-height:20px;
+	} 
+	a.swiper_read_more{
+		padding:10px 20px;
+		margin:20px 0 0 0;
+		font-size:14px;
+	}
+	.close_popup_button{
+		width:80%;
+	}
+	#pages_maincontent{
+		top:50px; 
+	}
+	.navbarpages{
+		height:50px;
+	}
+	.nav_left_logo a img{
+		max-width:65%;
+		padding:10px 0 0 0;
+	}
+	.nav_right_button a{
+		width:30px;
+		padding:10px 15px 0 0;
+	}
+	ul.posts li{
+		padding:10px 0;
+	}
+	.post_date{
+		width:20%;
+	}
+	.post_title{
+		width:62%;
+	}
+	.post_title h2{
+		font-size:18px;
+		line-height:22px;
+	}
+	.post_title_single h2{
+		font-size:24px;
+		padding:15px;
+		line-height:28px;
+	}
+
+	/* definições da info window do mapa */
+	.gm-style-iw {
+		width: 150px !important;
+	}
 }
-ul.toolbar_icons li img{
-margin:5px 0 0 0;
-}
-ul.toolbar_icons li.menuicon{
-padding:3.5% 1%;
-margin:0 1%;
-}
-.close_popup_button a{
-left:40%;
-}
-.swiper-container {
-height: 95%;
-}
-.swiper-slide span{
-margin:0 0 10px 0;
-padding:70px 0 0 0;
-font-size:48px;
-line-height:50px;
-} 
-.swiper-slide span.subtitle{
-margin:0px 0 10px 0;
-font-size:20px;
-line-height:20px;
-} 
-a.swiper_read_more{
-padding:10px 20px;
-margin:20px 0 0 0;
-font-size:14px;
-}
-.close_popup_button{
-width:80%;
-}
-#pages_maincontent{
-top:50px; 
-}
-.navbarpages{
-height:50px;
-}
-.nav_left_logo a img{
-max-width:65%;
-padding:10px 0 0 0;
-}
-.nav_right_button a{
-width:30px;
-padding:10px 15px 0 0;
-}
-ul.posts li{
-padding:10px 0;
-}
-.post_date{
-width:20%;
-}
-.post_title{
-width:62%;
-}
-.post_title h2{
-font-size:18px;
-line-height:22px;
-}
-.post_title_single h2{
-font-size:24px;
-padding:15px;
-line-height:28px;
-}
+
 
 /* abaixo codigos pessoais para definição do layout */
 .mapa {
@@ -1882,7 +1912,7 @@ line-height:28px;
 
 /* definições da info window do mapa */
 .gm-style-iw {
-    width: 180px !important;
+    width: 100px;
     top: 15px !important;
     left: 0px !important;
     background-color: #fff;
@@ -1890,6 +1920,7 @@ line-height:28px;
     border: 1px solid rgba(72, 181, 233, 0.6);
     border-radius: 2px 2px 10px 10px;
 }
+
 #iw-container {
     margin-bottom: 10px;
     width: 100%;
@@ -1939,4 +1970,22 @@ line-height:28px;
 .navbar .center {
 	color: rgba(255, 255, 255, 0.95) !important;
 }
+
+ #legend {
+	font-family: Arial, sans-serif;
+	background: #fff;
+	padding: 10px;
+	margin: 10px;
+	font-size: 10px;
+	border: 1px solid #375A70;
+	width: 80px;
+	top: 0px !important;
+}
+
+#legend img {
+	vertical-align: middle;
+	max-height: 20%;
+	max-width: 20%;
+	display: inline-block;
+	margin: 0 0 5px 0px;
 }

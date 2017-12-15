@@ -818,7 +818,7 @@ $$(document).on('pageInit', '.page[data-page="novaOcorrencia"]', function (e) {
 		if (inseriuGroup == false) {
 			lista = lista + ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '">';
 			//myApp.smartSelectAddOption('.smart-select select', ' <optgroup label="' + listaTipoOcorrencias[i].secretaria.nome + '"></optgroup>');
-			inseriuGroup == true;
+			inseriuGroup = true;
 			nomeGroup = listaTipoOcorrencias[i].secretaria.nome;
 		}
 		
@@ -1253,7 +1253,7 @@ function realizaEnvioOcorrencia(){
     $.ajax({
         url: urlSyncOcorrenciaCad,
         type: "POST",
-        contentType: "application.mob/json; charset=utf8",
+        contentType: "application.mob/json; charset=UTF-8",
         data: obj,
         //async: false,
         dataType: "json",      
