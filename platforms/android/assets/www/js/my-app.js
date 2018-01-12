@@ -18,7 +18,11 @@ var myApp = new Framework7({
 var cidadesContratadas = ['FORMIGA'];
 var urlSync = "";
 var urlSyncFormiga = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
+//var urlSyncFormiga = 'http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.';
 var listaOcorrencias = [];
+var listaNoticias = [];
+var listaPesquisas = [];
+var listaOpcaoPesquisa = [];
 var listaTipoOcorrencias = [];
 var map;
 var mapEnde;
@@ -57,6 +61,9 @@ $$('.open-login').on('click', function () {
 	verificaCidadeCidadao();
 });
 
+/**
+*
+*/
 function verificaCidadeCidadao(){
 	// verificando se a cidade do cidadão possui contrato
 	if (window.localStorage.getItem("cidade") == "" || window.localStorage.getItem("cidade") == undefined){
@@ -237,7 +244,7 @@ function buscaTipoOcorrencias(){
         // retorno de sucesso da chamada
         success: function( data ) {
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.tipoOcorrencia != null){      
@@ -301,7 +308,7 @@ function buscarMinhasOcorrencias(colocarMarcadores){
             listaOcorrencias = [];
 			
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.ocorrencia != null){   			
@@ -534,6 +541,473 @@ myApp.onPageBeforeInit('ocorrencia', function (page) {
 	buscarMinhasOcorrencias(false);
 });
 
+
+// listando as pesquisas da cidade
+$$(document).on('pageInit', '.page[data-page="pesquisa"]', function (e) {
+	
+	// verificando se possui email e senha cadastrados
+	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
+		$("#descPesquisa").text("Você precisa estar logado para visualizar as pesquisas da sua cidade");
+		return false;
+	}
+
+    // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), window.localStorage.getItem("senha_usuario"));
+
+    var urlSyncPesquisa = getUrlSync() + "pesquisa?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	
+	myApp.showIndicator();
+
+    // realiza a chamada no servidor
+    $.ajax({
+        url: urlSyncPesquisa,
+        type: "GET",
+		contentType: "application.mob/json; charset=utf8",
+        async: false,
+        cache: false,
+        timeout: 90000,        
+        // retorno de sucesso da chamada
+        success: function( data ) {
+            listaPesquisas = [];
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert(data.messages.erro[0], "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.pesquisa != null){   			
+                
+				// exibindo as noticias na tela
+                $.each(data.pesquisa, function(index, pesquisa) {    
+                    listaPesquisas.push(pesquisa);                                                  
+                });
+				
+				montaListagemPesquisas();
+				
+            } else {
+                // retornando que ouve um erro
+				myApp.hideIndicator();
+                data = $.parseJSON(data);
+                exibeErroSincronizar(data);
+                return;          
+            }
+        },
+
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return;
+        }
+    });   
+});
+
+// Realiza a montagem da listagem das pesquisas da cidade
+function montaListagemPesquisas(){
+
+	// limpando a variavel que controla a visualização das pesquisas 
+	window.localStorage.setItem("id_pesquisa", "");
+	
+	$('#listaPesquisas li').remove('li');
+	
+	var listaPesquisasCidade = $("#listaPesquisas");
+    var lista = '';
+
+    if (listaPesquisas.length > 0) {	
+		// listando todas as pesquias da cidade
+        for (var i = 0; i < listaPesquisas.length; i++) {
+			if (listaPesquisas[i] != null){
+				var pesquisa = listaPesquisas[i]; 
+				lista = lista + '<li class="swipeout"> <div class="swipeout-content item-content"> <div class="post_entry"><div class="post_date">';
+				lista = lista + '<span class="day">'+ pesquisa.dataPesquisa.substring(0,2) + '</span>';
+				lista = lista + '<div class="pr-aling-date"><span class="month">'+ getMesOcorrencia(pesquisa.dataPesquisa.substring(5,3)) + '</span></br>',
+				lista = lista + '<span class="year">'+ pesquisa.dataPesquisa.substring(10,6) + '</span></div></div>';
+				lista = lista + '<div class="post_title pr-blog-noticia">';
+				lista = lista + '<a href="#" onclick="visualizarPesquisa('+pesquisa.id+')">'
+				lista = lista + '<h1>' + pesquisa.descricao + '</h1></div></div></li>';
+			}
+        }
+		listaPesquisasCidade.append(lista);
+    } else if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
+		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
+		$("#descNoticia").text("Você precisa estar logado para visualizar as pesquisas da sua cidade");
+	}
+	
+	myApp.hideIndicator();
+	
+}
+
+/**
+* realiza a visualização da pesquisa que o usuario selecionou
+*/
+function visualizarPesquisa(id_pesquisa){
+	window.localStorage.setItem("id_pesquisa", id_pesquisa);
+	mainView.router.loadPage("pesquisaDetalhe.html");
+}
+
+
+/**
+* Evento de exibição da pagina de visualização de uma pesquisa
+*/ 
+$$(document).on('pageInit', '.page[data-page="pesquisaDetalhe"]', function (e) {
+	
+	
+	$('#graficoResultado').hide();
+	
+	// pegando o id da ocorrencia que deseja visualizarv
+	var id = window.localStorage.getItem("id_pesquisa");
+	
+	var pesquisa;
+	
+	//buscando pela pesquisa na lista
+	for (var i = 0; i < listaPesquisas.length; i++) {
+		// verificando se é a ocorrencia desejada
+		if (listaPesquisas[i].id == id){
+			pesquisa = listaPesquisas[i];
+			break;
+		}
+	}
+	
+	// exibindo os dados da pesquisa na tela
+	$('.id_pesquisa').text(pesquisa.id);
+	$('.pr-titulo-pesquisa').text(pesquisa.descricao);
+	$('.pr-data-pesquisa').text(pesquisa.dataPesquisa);
+	var pesquisaEncerrada = pesquisa.encerrada;
+	
+	// montando a lista das opções da pesquisa
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+
+    // gerando a url de envio dos dados
+    var urlSyncOpcao = getUrlSync() + "pesquisaOpcao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	urlSyncOpcao = urlSyncOpcao + "pesquisa=" + pesquisa.id;
+	
+    var pesquisaOpcao = new Object();
+	var pesquisaObj = new Object();
+	
+	pesquisaObj.id = pesquisa.id;
+	pesquisaOpcao.pesquisa = pesquisaObj;
+	
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ pesquisaOpcao: pesquisaOpcao });            
+	
+	myApp.showIndicator();
+
+    // enviando os dados
+    $.ajax({
+        url: urlSyncOpcao,
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        async: false,
+        dataType: "json",        
+        success: function (data) { 
+		
+			listaOpcaoPesquisa = [];
+		
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert(data.messages.erro[0], "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.pesquisaOpcao != null){
+				// percorrendo as opções de pesquisa
+				var listaOpcoes = $("#listaOpcaoPesquisa");
+				var lista = '';
+				var checked = false;
+				// exibindo as opções de pesquisa na tela
+                $.each(data.pesquisaOpcao, function(index, pesquisaOpcao) {
+					lista = lista + '<li><label class="item-radio item-content">';
+					if (!checked){
+						lista = lista + '<input type="radio" name="opcao-radio" value="' + pesquisaOpcao.id + '" checked />';
+						checked = true;
+					} else {
+						lista = lista + '<input type="radio" name="opcao-radio" value="' + pesquisaOpcao.id + '"/>';
+					}
+					lista = lista + '<i class="icon icon-radio"></i> <div class="item-inner"> ';
+					lista = lista + '<div class="item-title"> ' + pesquisaOpcao.descricao + ' </div></div></label></li>';
+					
+					listaOpcaoPesquisa.push(pesquisaOpcao);
+					
+				});
+				
+				// verificando se a pesquisa já foi encerrada
+				if (pesquisaEncerrada == true){
+					$('#descResultadoPesquisa').text("Essa pesquisa já foi encerrada, veja o resultado abaixo!");
+					myApp.hideIndicator();
+					resultadoPesquisa();
+					return false;
+				}
+					
+				
+				var nomePesquisa = "pesquisa" + $('.id_pesquisa').text();  
+				if (null != window.localStorage.getItem(nomePesquisa)){
+					myApp.hideIndicator();
+					resultadoPesquisa();
+					return false;
+				}
+				
+				listaOpcoes.append(lista);	
+			}
+
+			myApp.hideIndicator();
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    });
+	
+});
+
+/*
+* realiza o envio da opção de pesquisa do usuário
+*/
+function enviarOpcaoPesquisa(){
+	if (window.localStorage.getItem("email_usuario") == null){
+		myApp.alert("Você precisa estar logado para enviar sua opinião na pesquisa.", "Atenção!");
+		return false;
+	}
+
+    // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
+        window.localStorage.getItem("senha_usuario"));    
+		
+		// pegando o valor que o usuário selecionou
+	var idSelecionado = $("input:radio[name ='opcao-radio']:checked").val();
+
+    // gerando a url de envio dos dados
+    var urlSyncOpiniao = getUrlSync() + "pesquisaOpcao?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	urlSyncOpiniao = urlSyncOpiniao + "votar=" + idSelecionado;
+
+	// variavel que irá atualizar o valor de votos
+	var pesquisaOpcao = new Object();
+	
+	// percorrendo a listagem para aumentar o numero de votos
+	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
+		var obj = listaOpcaoPesquisa[i];	
+		if (obj.id == idSelecionado){
+			pesquisaOpcao = obj;
+			break;
+		}			
+	}
+
+    // transformando o objeto em uma string json
+    var obj = JSON.stringify({ pesquisaOpcao: pesquisaOpcao });            
+	
+	myApp.showIndicator();
+    // enviando os dados
+    $.ajax({
+        url: urlSyncOpiniao,
+        type: "GET",
+        contentType: "application.mob/json; charset=utf8",
+        data: obj,
+        //async: false,
+        dataType: "json",        
+        success: function (data) { 
+		
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert(data.messages.erro[0], "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.pesquisaOpcao != null){
+				myApp.alert("Dados enviados com sucesso, obrigado por participar da nossa pesquisa!", "Atenção");
+				
+				var nomePesquisa = "pesquisa" + $('.id_pesquisa').text();  
+				window.localStorage.setItem(nomePesquisa, 1);
+				
+				myApp.hideIndicator();
+				resultadoPesquisa();
+			}
+			
+        },
+        
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return false;
+        }
+
+    }); 
+	
+}
+
+/*
+* mostra o resultado da pesquisa ao usuário
+*/
+function resultadoPesquisa(){
+	google.charts.load("current", {packages:["corechart"]});
+	google.charts.setOnLoadCallback(exibeResultadoPesquisa);
+	
+}
+
+function exibeResultadoPesquisa(){
+	
+	var dataTable = new google.visualization.DataTable();
+	
+	dataTable.addColumn('string', 'Opção');
+    dataTable.addColumn('number', 'Votos');
+	
+	// achando o percentual de cada opção
+	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
+		var opcao = listaOpcaoPesquisa[i];
+		dataTable.addRow([{ v: opcao.descricao }, { v: parseInt(opcao.votos) }]);
+	}
+	
+	var dataSummary = google.visualization.data.group(
+		dataTable,
+		[0],
+		[{'column': 1, 'aggregation': google.visualization.data.sum, 'type': 'number'}]
+	);
+	
+	
+	var barchart_options = {title:$('.pr-titulo-pesquisa').text(), width:380, height:300, legend: 'none'};
+    var barchart = new google.visualization.BarChart(document.getElementById('barchart_div'));
+    barchart.draw(dataSummary, barchart_options);
+	
+	$('#dadosPesquisa').hide();
+	$('#graficoResultado').show();
+}
+
+// listando as noticias da cidade
+$$(document).on('pageInit', '.page[data-page="noticia"]', function (e) {
+	
+	// verificando se possui email e senha cadastrados
+	if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
+		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
+		$("#descNoticia").text("Você precisa estar logado para visualizar as notícias da sua cidade");
+		return false;
+	}
+
+    // gerando o token para o acesso ao servidor
+    token = gerarTokenSync(window.localStorage.getItem("email_usuario"), window.localStorage.getItem("senha_usuario"));
+
+    var urlSyncNoticia = getUrlSync() + "noticia?token=" + token + "(" + window.localStorage.getItem("email_usuario") + ")";
+	
+	myApp.showIndicator();
+
+    // realiza a chamada no servidor
+    $.ajax({
+        url: urlSyncNoticia,
+        type: "GET",
+		contentType: "application.mob/json; charset=utf8",
+        async: false,
+        cache: false,
+        timeout: 90000,        
+        // retorno de sucesso da chamada
+        success: function( data ) {
+            listaNoticias = [];
+			
+			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
+        		myApp.alert(data.messages.erro[0], "Atenção");
+        		myApp.hideIndicator();
+        		return false;
+        	} else if (data.noticia != null){   			
+                
+				// exibindo as noticias na tela
+                $.each(data.noticia, function(index, noticia) {    
+                    listaNoticias.push(noticia);                                                  
+                });
+				
+				montaListagemNoticias();
+				
+            } else {
+                // retornando que ouve um erro
+				myApp.hideIndicator();
+                data = $.parseJSON(data);
+                exibeErroSincronizar(data);
+                return;          
+            }
+        },
+
+        // retorno de erro da chamada
+        error: function(jqXHR, exception) {
+			myApp.hideIndicator();
+            trataErroSincronizacao(jqXHR, exception);
+            return;
+        }
+    });   
+});
+
+// Realiza a montagem da listagem das ultimas noticias da cidade
+function montaListagemNoticias(){
+
+	// limpando a variavel que controla a visualização das noticias 
+	window.localStorage.setItem("id_noticia", "");
+	
+	$('#listaNoticias li').remove('li');
+	
+	var listaNoticiasCidade = $("#listaNoticias");
+    var lista = '';
+
+    if (listaNoticias.length > 0) {	
+		// listando todas as ocorrências fetias pelo usuário
+        for (var i = 0; i < listaNoticias.length; i++) {
+			if (listaNoticias[i] != null){
+				var noticia = listaNoticias[i]; 
+				lista = lista + '<li class="swipeout"> <div class="swipeout-content item-content"> <div class="post_entry"><div class="post_date">';
+				lista = lista + '<span class="day">'+ noticia.dataNoticia.substring(0,2) + '</span>';
+				lista = lista + '<div class="pr-aling-date"><span class="month">'+ getMesOcorrencia(noticia.dataNoticia.substring(5,3)) + '</span></br>',
+				lista = lista + '<span class="year">'+ noticia.dataNoticia.substring(10,6) + '</span></div></div>';
+				lista = lista + '<div class="post_title pr-blog-noticia">';
+				lista = lista + '<a href="#" onclick="visualizarNoticia('+noticia.id+')">'
+				lista = lista + '<h1>' + noticia.titulo + '</h1>';
+				lista = lista + '<h2>' + noticia.subtitulo + '</h2></div></div></li>';
+			}
+        }
+		listaNoticiasCidade.append(lista);
+    } else if (window.localStorage.getItem("email_usuario") == "" || window.localStorage.getItem("email_usuario") == undefined){
+		// caso não esteja logado exibe a mensgem informando que é necessário estar logado
+		$("#descNoticia").text("Você precisa estar logado para visualizar as notícias da sua cidade");
+	}
+	
+	myApp.hideIndicator();
+	
+}
+
+
+
+/**
+* Clique na lista de ocorrencias para visualizar uma determinada noticia
+*/
+function visualizarNoticia(id_noticia){
+	window.localStorage.setItem("id_noticia", id_noticia);
+	mainView.router.loadPage("noticiaDetalhe.html");
+}
+
+/**
+* Evento de exibição da pagina de visualização de uma noticia
+*/ 
+$$(document).on('pageInit', '.page[data-page="noticiaDetalhe"]', function (e) {
+	// pegando o id da noticia que deseja visualizar
+	var id = window.localStorage.getItem("id_noticia");
+	
+	var noticia;
+	
+	//buscando pela ocorrencia na lista
+	for (var i = 0; i < listaNoticias.length; i++) {
+		// verificando se é a ocorrencia desejada
+		if (listaNoticias[i].id == id){
+			noticia = listaNoticias[i];
+			break;
+		}
+	}
+	
+	// pegando os campos da tela e setando os valores desejados
+	//$('.id_ocorrencia').text(ocorrencia.id);
+	$('.tituloNoticia').text(noticia.titulo);
+	$('.subtituloNoticia').text(noticia.subtitulo);
+	$('.autorDataNoticia').text(noticia.dataNoticia + " - Por: " + noticia.autor);
+	$('.descricaoNoticia').append(noticia.descricao);
+	
+});
+
+
+
+
 // listando os imoveis de trabalho
 $$(document).on('pageInit', '.page[data-page="ocorrencia"]', function (e) {
 	// limpando a variavel que controla a visualização das ocorrencias
@@ -558,7 +1032,7 @@ function montaListagemOcorrencias(){
 				lista = lista + '<div class="pr-aling-date"><span class="month">'+ getMesOcorrencia(ocorrencia.dataOcorrencia.substring(5,3)) + '</span></br>';
 				lista = lista + '<span class="year">'+ ocorrencia.dataOcorrencia.substring(10,6) + '</span></div></div>';
 				lista = lista + '<div class="post_title">';
-				lista = lista + '<h2><a href="#" onclick="visualizarOcorrencia('+ocorrencia.id+')">'
+				lista = lista + '<a href="#" onclick="visualizarOcorrencia('+ocorrencia.id+')">'
 				lista = lista + 'Tipo: ' + ocorrencia.descricaoTipo + '</br>';
 				lista = lista + 'Endereço: ' + ocorrencia.endereco + '</br>';
 				lista = lista + 'Status: ' + ocorrencia.statusOcorrencia.lookup + '</a></h2> </div>';
@@ -613,7 +1087,7 @@ function removerOcorrencia(id_ocorrencia){
 			success: function (data) { 
 
 				if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-					myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+					myApp.alert(data.messages.erro[0], "Atenção");
 					myApp.hideIndicator();
 					return false;
 				}
@@ -709,7 +1183,7 @@ $$(document).on('pageInit', '.page[data-page="ocorrenciaDetalhe"]', function (e)
         success: function (data) { 
 		
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.historicoOcorrencia != null){
@@ -975,7 +1449,7 @@ function realizaLogin(){
 		success: function( data ) {
 			
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else 	if (data.pessoa != null){                    
@@ -1009,12 +1483,8 @@ function realizaLogin(){
 
 function realizaLogout(){
 	// removendo os dados armazenados
-    window.localStorage.removeItem("email_usuario");
-    window.localStorage.removeItem("senha_usuario");   
-	window.localStorage.removeItem("nome_pessoa");   
-	window.localStorage.removeItem("tipoOcorrencias");   
-	window.localStorage.removeItem("cidade");  	
-	
+	window.localstorage.clear();
+    
     listaOcorrencias = [];
     listaTipoOcorrencias = [];
     enderecoOcorrencia = "";
@@ -1095,14 +1565,14 @@ function realizaCadastro(){
         success: function (data) {
 			
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+				myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	}
 			
 			// armazenando os dados                    
 			window.localStorage.setItem("email_usuario", data.pessoa.email);
-			window.localStorage.setItem("senha_usuario", $("#senha").val());
+			window.localStorage.setItem("senha_usuario", $("#senhaCad").val());
 			window.localStorage.setItem("nome_pessoa", data.pessoa.nome);
 			
 			$(".user_details p").remove('p')
@@ -1260,7 +1730,7 @@ function realizaEnvioOcorrencia(){
         success: function (data) {
 			
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+				myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	}
@@ -1359,7 +1829,7 @@ function enviarSugestao(){
         success: function (data) { 
 			
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	}
@@ -1432,7 +1902,7 @@ function consultarSugestao(){
         success: function (data) { 
 			var texto;
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.sugestao[0].observacao != null) {
@@ -1523,7 +1993,7 @@ function enviarDenuncia(){
         dataType: "json",        
         success: function (data) { 
             if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0],  "Atenção");
         		myApp.hideIndicator();
         		return false;
         	}			
@@ -1595,7 +2065,7 @@ function consultarDenuncia(){
         success: function (data) { 
 			var texto;
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.denuncia[0].observacao != null) {
@@ -1665,7 +2135,7 @@ function enviarComentario(){
         success: function (data) { 
 		
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	} else if (data.historicoOcorrencia != null){
@@ -1710,8 +2180,6 @@ function enviarNovaSenha(){
 		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
 		return false;
 	}
-
-	
 	
 	if ($("#emailNovaSenha").val() == ""){
 		myApp.alert("Você deve informar o seu e-mail de cadastro.", "Atenção!");
@@ -1783,7 +2251,7 @@ function realizaAlteracaoSenha(pessoa){
         dataType: "json",        
         success: function (data) {
 			if (data.messages != null &&  data.messages.erro != null && data.messages.erro[0] != null){
-        		myApp.alert("Ocorreu um erro na comunicação com os servidores!", "Atenção");
+        		myApp.alert(data.messages.erro[0], "Atenção");
         		myApp.hideIndicator();
         		return false;
         	}
