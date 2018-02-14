@@ -15,12 +15,15 @@
       
  
 				<div class="post_single">                 
+					
 					<div id="dadosPesquisa" class="page_content"> 
+				
+						<blockquote id="descPesquisa" class="pr-titulo-pesquisa">
+							Clique na pesquisa para deixar sua opinião 
+						</blockquote>
 						<div class="entry">
-							<div class="pr-noticia-title">
-								<h1 class="pr-titulo-pesquisa"></h1>
-							</div>
-							<p class="pr-data-pesquisa"></p>
+							<p class="id_pesquisa" style="display: none;">
+							<!--<p class="pr-data-pesquisa"></p>-->
 							
 							<div class="list-block">
 								<ul id="listaOpcaoPesquisa">
@@ -35,28 +38,14 @@
 							<a href="#" onclick="resultadoPesquisa()" class="signup_twitter">Resultado</a>            
 						</div>
 					</div>
-					
-					<div id="graficoResultado" class="list-block simple-list">
-						<div class="pr-noticia-title">
-							<h1 class="pr-titulo-pesquisa"></h1>
-						</div>
-						
-						<ul id="resultadoPesquisa">
-							
-						</ul>
+										
+					<div id="graficoResultado" class="page_content">
+						<blockquote id="descResultadoPesquisa">
+							Obrigado por participar da pesquisa, sua opinião é muito importante para nós!
+						</blockquote>
+
+						<div id="barchart_div" style="border: 1px solid #ccc"></div>
 					</div>
-					
-					
-					
-					
-					
-					
-					<!--
-					<div id="graficoResultado">
-						<!--<div id="donutchart" style="width: 500px; height: 700px;"></div>
-						<div id="resultadoPesquisa" style="height: 370px; width: 100%;"></div>
-					</div>
-					-->
 				</div>
          
 			</div>

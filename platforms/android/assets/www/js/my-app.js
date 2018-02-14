@@ -15,10 +15,14 @@ var myApp = new Framework7({
     template7Pages: true
 });
 
-var cidadesContratadas = ['FORMIGA'];
-var urlSync = "";
+var cidadesContratadas = ['FORMIGA','ARCOS'];
+var urlSync = "http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.";
+var urlSyncArcos = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
 var urlSyncFormiga = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
+//var urlSync = "http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.";
+//var urlSyncArcos = 'http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.';
 //var urlSyncFormiga = 'http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.';
+
 var listaOcorrencias = [];
 var listaNoticias = [];
 var listaPesquisas = [];
@@ -40,6 +44,15 @@ var mainView = myApp.addView('.view-main', {
     dynamicNavbar: false
 });
 
+var calendar = myApp.calendar({
+	input: '#nascCad', 
+	openIn: 'customModal', 
+	dateFormat: 'dd/mm/yyyy', 
+	closeOnSelect: true,
+	dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
+	monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto' , 'Setembro' , 'Outubro', 'Novembro', 'Dezembro']
+});
+
 $$(document).on('ajaxStart',function(e){myApp.showIndicator();});
 $$(document).on('ajaxComplete',function(){myApp.hideIndicator();});																																																																		
 
@@ -53,8 +66,17 @@ $$(document).on('pageInit', function (e) {
 	
 	verificaCidadeCidadao();
 	
+	window.plugins.sim.getSimInfo(armazenaNumeroTelefone, errorCallback);
+
 });
 
+function errorCallback(obj){
+	
+}
+
+function armazenaNumeroTelefone(obj){
+	
+}
 
 $$('.open-login').on('click', function () {
 	myApp.popup('.popup-login');
@@ -117,14 +139,18 @@ function verificaCidadeContratada(cidade){
 }
 
 /**
-* 
+*  Retorna a url de sincronismo da cidade do usuário
 */
 function getUrlSync(){
 	var cidade = window.localStorage.getItem("cidade");
 	
 	if (cidade == "FORMIGA"){
 		return urlSyncFormiga;
-	} 
+	} else if (cidade == "ARCOS"){
+		return urlSyncArcos;
+	} else {
+		return urlSync;
+	}
 }	
 
 /** abaixo os códigos personalizados */
@@ -1423,12 +1449,6 @@ function realizaLogin(){
 		myApp.alert("Você deve informar sua senha!", "Atenção!");
 		return false;
 	}
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor!\nSolicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
           
 	// gerando o token para o acesso ao servidor
 	token = gerarTokenSync($("#email").val(), $("#senha").val());
@@ -1483,7 +1503,7 @@ function realizaLogin(){
 
 function realizaLogout(){
 	// removendo os dados armazenados
-	window.localstorage.clear();
+	window.localStorage.clear();
     
     listaOcorrencias = [];
     listaTipoOcorrencias = [];
@@ -1502,14 +1522,18 @@ function realizaCadastro(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor!\n Vamos receer o seu cadastro e entrar em contato com a sua prefeitura", "Atenção!");
+		//return false;
 	}
 
-	
-  // verificando se informou os dados obrigatorios
+    // verificando se informou os dados obrigatorios
     if ($("#nomeCad").val() == ""){    
 		myApp.alert("Você deve informar o seu nome completo!", "Atenção!");
+        return false;        
+    }
+	
+    if ($("#endeCad").val() == ""){    
+		myApp.alert("Você deve informar o seu endereço!", "Atenção!");
         return false;        
     }
 
@@ -1549,6 +1573,8 @@ function realizaCadastro(){
     pessoa.email = $("#emailCad").val();
     pessoa.senha = $("#senhaCad").val();
     pessoa.nome = $("#nomeCad").val();
+	pessoa.endereco = $("#endeCad").val();
+	pessoa.dataCadastro = $("#nascCad").val();
 
     // transformando o objeto em uma string json
     var obj = JSON.stringify({ pessoa: pessoa }); 
@@ -1672,7 +1698,7 @@ function enviarOcorrencia(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos receber sua ocorrência e entrar em contato com a sua prefeitura", "Atenção!");
 		return false;
 	}
 
@@ -1777,8 +1803,8 @@ function enviarSugestao(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos receber sua sugestão e entrar em contato com a sua prefeitura", "Atenção!");
+//		return false;
 	}
 
 	
@@ -1856,16 +1882,9 @@ function enviarSugestao(){
 }
 
 /**
-*
+* Realiza a consulta da sugestão enviada pelo usuário
 */
 function consultarSugestao(){
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
-
 	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
@@ -1941,8 +1960,8 @@ function enviarDenuncia(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+     	myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos recebere sua denúncia e entrar em contato com a sua prefeitura", "Atenção!");
+		//return false;
 	}
 
 	
@@ -2019,16 +2038,9 @@ function enviarDenuncia(){
 }
 
 /*
-*
+* Realiza a consulta de denúncias enviadas pelo cidadão
 */
 function consultarDenuncia(){
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
-
 	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
@@ -2172,14 +2184,10 @@ function enviarComentario(){
 	
 }
 
-
+/**
+* Realiza o envio de uma nova senha para o usuário
+*/
 function enviarNovaSenha(){
-	
-    // verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
 	
 	if ($("#emailNovaSenha").val() == ""){
 		myApp.alert("Você deve informar o seu e-mail de cadastro.", "Atenção!");

@@ -15,10 +15,14 @@ var myApp = new Framework7({
     template7Pages: true
 });
 
-var cidadesContratadas = ['FORMIGA'];
-var urlSync = "";
+var cidadesContratadas = ['FORMIGA','ARCOS'];
+var urlSync = "http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.";
+var urlSyncArcos = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
 var urlSyncFormiga = 'http://192.168.0.104:8080/cidadao_auditor/soa/service/mobile.';
+//var urlSync = "http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.";
+//var urlSyncArcos = 'http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.';
 //var urlSyncFormiga = 'http://172.20.10.9:8080/cidadao_auditor/soa/service/mobile.';
+
 var listaOcorrencias = [];
 var listaNoticias = [];
 var listaPesquisas = [];
@@ -40,6 +44,15 @@ var mainView = myApp.addView('.view-main', {
     dynamicNavbar: false
 });
 
+var calendar = myApp.calendar({
+	input: '#nascCad', 
+	openIn: 'customModal', 
+	dateFormat: 'dd/mm/yyyy', 
+	closeOnSelect: true,
+	dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
+	monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto' , 'Setembro' , 'Outubro', 'Novembro', 'Dezembro']
+});
+
 $$(document).on('ajaxStart',function(e){myApp.showIndicator();});
 $$(document).on('ajaxComplete',function(){myApp.hideIndicator();});																																																																		
 
@@ -53,8 +66,17 @@ $$(document).on('pageInit', function (e) {
 	
 	verificaCidadeCidadao();
 	
+	window.plugins.sim.getSimInfo(armazenaNumeroTelefone, errorCallback);
+
 });
 
+function errorCallback(obj){
+	
+}
+
+function armazenaNumeroTelefone(obj){
+	
+}
 
 $$('.open-login').on('click', function () {
 	myApp.popup('.popup-login');
@@ -117,14 +139,18 @@ function verificaCidadeContratada(cidade){
 }
 
 /**
-* 
+*  Retorna a url de sincronismo da cidade do usuário
 */
 function getUrlSync(){
 	var cidade = window.localStorage.getItem("cidade");
 	
 	if (cidade == "FORMIGA"){
 		return urlSyncFormiga;
-	} 
+	} else if (cidade == "ARCOS"){
+		return urlSyncArcos;
+	} else {
+		return urlSync;
+	}
 }	
 
 /** abaixo os códigos personalizados */
@@ -671,6 +697,7 @@ $$(document).on('pageInit', '.page[data-page="pesquisaDetalhe"]', function (e) {
 	$('.id_pesquisa').text(pesquisa.id);
 	$('.pr-titulo-pesquisa').text(pesquisa.descricao);
 	$('.pr-data-pesquisa').text(pesquisa.dataPesquisa);
+	var pesquisaEncerrada = pesquisa.encerrada;
 	
 	// montando a lista das opções da pesquisa
     token = gerarTokenSync(window.localStorage.getItem("email_usuario"), 
@@ -712,7 +739,7 @@ $$(document).on('pageInit', '.page[data-page="pesquisaDetalhe"]', function (e) {
 				var listaOpcoes = $("#listaOpcaoPesquisa");
 				var lista = '';
 				var checked = false;
-				// exibindo os comentarios na tela
+				// exibindo as opções de pesquisa na tela
                 $.each(data.pesquisaOpcao, function(index, pesquisaOpcao) {
 					lista = lista + '<li><label class="item-radio item-content">';
 					if (!checked){
@@ -725,7 +752,24 @@ $$(document).on('pageInit', '.page[data-page="pesquisaDetalhe"]', function (e) {
 					lista = lista + '<div class="item-title"> ' + pesquisaOpcao.descricao + ' </div></div></label></li>';
 					
 					listaOpcaoPesquisa.push(pesquisaOpcao);
+					
 				});
+				
+				// verificando se a pesquisa já foi encerrada
+				if (pesquisaEncerrada == true){
+					$('#descResultadoPesquisa').text("Essa pesquisa já foi encerrada, veja o resultado abaixo!");
+					myApp.hideIndicator();
+					resultadoPesquisa();
+					return false;
+				}
+					
+				
+				var nomePesquisa = "pesquisa" + $('.id_pesquisa').text();  
+				if (null != window.localStorage.getItem(nomePesquisa)){
+					myApp.hideIndicator();
+					resultadoPesquisa();
+					return false;
+				}
 				
 				listaOpcoes.append(lista);	
 			}
@@ -796,6 +840,10 @@ function enviarOpcaoPesquisa(){
         		return false;
         	} else if (data.pesquisaOpcao != null){
 				myApp.alert("Dados enviados com sucesso, obrigado por participar da nossa pesquisa!", "Atenção");
+				
+				var nomePesquisa = "pesquisa" + $('.id_pesquisa').text();  
+				window.localStorage.setItem(nomePesquisa, 1);
+				
 				myApp.hideIndicator();
 				resultadoPesquisa();
 			}
@@ -817,64 +865,9 @@ function enviarOpcaoPesquisa(){
 * mostra o resultado da pesquisa ao usuário
 */
 function resultadoPesquisa(){
-	
-	// armazena o total de votos
-	var total = 0;
-	
-	// percorrendo a listagem para somar o numero de votos
-	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
-		var votos = listaOpcaoPesquisa[i].votos
-		total = parseInt(total) + parseInt(votos);
-	}
-	
-	var listaResultado = $("#resultadoPesquisa");
-	var lista = '';
-	// achando o percentual de cada opção
-	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
-		var opcao = listaOpcaoPesquisa[i];
-		var percentual = (parseInt(opcao.votos) * 100) / parseInt(total);
-		
-		lista = lista + '<li><div class="item-title item-label">'+opcao.descricao+'</div>';
-		lista = lista + '<div id="' + opcao.id + '" class="progressbar ' + getColor(i) + '" data-progress="' + percentual + '"></div></li>'
-	}
-	
-	listaResultado.append(lista);
-	
-	$('#dadosPesquisa').hide();
-	$('#graficoResultado').show();
-
-	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
-		var opcao = listaOpcaoPesquisa[i];
-		var id = '#' + opcao.id;
-		var progress = $(id).attr('data-progress');
-		myApp.progressbar.set(id, progress);
-	}
-	
-}
-
-function getColor(i){
-	
-	if (i == 0){
-		return 'color-blue';
-	} else if (i == 1){
-		return 'color-red';
-	} else if (i == 2){
-		return 'color-pink';
-	} else if (i == 3){
-		return 'color-green';
-	} else if (i == 4){
-		return 'color-yellow';
-	} else if (i == 5){
-		return 'color-orange';
-	} else {
-		return 'color-black';
-	}
-}
-
-
-/*
 	google.charts.load("current", {packages:["corechart"]});
 	google.charts.setOnLoadCallback(exibeResultadoPesquisa);
+	
 }
 
 function exibeResultadoPesquisa(){
@@ -896,63 +889,14 @@ function exibeResultadoPesquisa(){
 		[{'column': 1, 'aggregation': google.visualization.data.sum, 'type': 'number'}]
 	);
 	
-	var options = {
-        title: $('.pr-titulo-pesquisa').text()
-    };
-
-	var chart = new google.visualization.PieChart(document.getElementById('resultadoPesquisa'));
-    //var chart = new google.visualization.BarChart(document.getElementById('resultadoPesquisa'));
 	
-
-    chart.draw(dataSummary, options);
+	var barchart_options = {title:$('.pr-titulo-pesquisa').text(), width:380, height:300, legend: 'none'};
+    var barchart = new google.visualization.BarChart(document.getElementById('barchart_div'));
+    barchart.draw(dataSummary, barchart_options);
+	
 	$('#dadosPesquisa').hide();
 	$('#graficoResultado').show();
-	
-	/*	
-	
-		
-	
-	
-    var options = {
-        title: $('.pr-titulo-pesquisa').text(),
-		is3D: true,
-    };
-
-    var chart = new google.visualization.PieChart(document.getElementById('donutchart'));
-	// calculando o total de votos
-	var total = 0;
-	
-	// percorrendo a listagem para aumentar o numero de votos
-	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
-		var votos = listaOpcaoPesquisa[i].votos
-		total = parseInt(total) + parseInt(votos);
-	}
-	
-	var chartData = [];
-	// achando o percentual de cada opção
-	for (var i = 0; i < listaOpcaoPesquisa.length; i++) {
-		var opcao = listaOpcaoPesquisa[i];
-		var obj = new Object();
-		obj.y = (parseInt(opcao.votos) * 100) / parseInt(total);
-		obj.label = opcao.descricao;
-		
-		chartData.push(obj);
-	}
-	
-	var chart = new CanvasJS.Chart("resultadoPesquisa", {
-		animationEnabled: false,
-		title: {text: $('.pr-titulo-pesquisa').text()},
-		data: [{
-			type: "pie",
-			startAngle: 240,
-			yValueFormatString: "##0.00'%'",
-			indexLabel: "{label} {y}",
-			dataPoints: chartData }]
-	});
-	chart.render();
-	$('.canvasjs-chart-credit').hide();
 }
-*/
 
 // listando as noticias da cidade
 $$(document).on('pageInit', '.page[data-page="noticia"]', function (e) {
@@ -1505,12 +1449,6 @@ function realizaLogin(){
 		myApp.alert("Você deve informar sua senha!", "Atenção!");
 		return false;
 	}
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor!\nSolicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
           
 	// gerando o token para o acesso ao servidor
 	token = gerarTokenSync($("#email").val(), $("#senha").val());
@@ -1565,12 +1503,8 @@ function realizaLogin(){
 
 function realizaLogout(){
 	// removendo os dados armazenados
-    window.localStorage.removeItem("email_usuario");
-    window.localStorage.removeItem("senha_usuario");   
-	window.localStorage.removeItem("nome_pessoa");   
-	window.localStorage.removeItem("tipoOcorrencias");   
-	window.localStorage.removeItem("cidade");  	
-	
+	window.localStorage.clear();
+    
     listaOcorrencias = [];
     listaTipoOcorrencias = [];
     enderecoOcorrencia = "";
@@ -1588,14 +1522,18 @@ function realizaCadastro(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor!\n Vamos receer o seu cadastro e entrar em contato com a sua prefeitura", "Atenção!");
+		//return false;
 	}
 
-	
-  // verificando se informou os dados obrigatorios
+    // verificando se informou os dados obrigatorios
     if ($("#nomeCad").val() == ""){    
 		myApp.alert("Você deve informar o seu nome completo!", "Atenção!");
+        return false;        
+    }
+	
+    if ($("#endeCad").val() == ""){    
+		myApp.alert("Você deve informar o seu endereço!", "Atenção!");
         return false;        
     }
 
@@ -1635,6 +1573,8 @@ function realizaCadastro(){
     pessoa.email = $("#emailCad").val();
     pessoa.senha = $("#senhaCad").val();
     pessoa.nome = $("#nomeCad").val();
+	pessoa.endereco = $("#endeCad").val();
+	pessoa.dataCadastro = $("#nascCad").val();
 
     // transformando o objeto em uma string json
     var obj = JSON.stringify({ pessoa: pessoa }); 
@@ -1758,7 +1698,7 @@ function enviarOcorrencia(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos receber sua ocorrência e entrar em contato com a sua prefeitura", "Atenção!");
 		return false;
 	}
 
@@ -1863,8 +1803,8 @@ function enviarSugestao(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos receber sua sugestão e entrar em contato com a sua prefeitura", "Atenção!");
+//		return false;
 	}
 
 	
@@ -1942,16 +1882,9 @@ function enviarSugestao(){
 }
 
 /**
-*
+* Realiza a consulta da sugestão enviada pelo usuário
 */
 function consultarSugestao(){
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
-
 	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
@@ -2027,8 +1960,8 @@ function enviarDenuncia(){
 	
 	// verificando se a cidade do cidadão tem nossos serviços contratados
 	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
+     	myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Vamos recebere sua denúncia e entrar em contato com a sua prefeitura", "Atenção!");
+		//return false;
 	}
 
 	
@@ -2105,16 +2038,9 @@ function enviarDenuncia(){
 }
 
 /*
-*
+* Realiza a consulta de denúncias enviadas pelo cidadão
 */
 function consultarDenuncia(){
-	
-	// verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
-
 	
 	if (window.localStorage.getItem("email_usuario") == null){
 		myApp.alert("Você precisa estar logado para enviar suas sugestões.", "Atenção!");
@@ -2258,14 +2184,10 @@ function enviarComentario(){
 	
 }
 
-
+/**
+* Realiza o envio de uma nova senha para o usuário
+*/
 function enviarNovaSenha(){
-	
-    // verificando se a cidade do cidadão tem nossos serviços contratados
-	if (verificaCidadeContratada(window.localStorage.getItem("cidade")) == false){
-		myApp.alert("Sua cidade ainda não possui o Cidadão Auditor! \n Solicite uma visita de um de nossos representantes a sua cidade, acesse o site www.cidadaoauditorapp.com.br e entre em contato!", "Atenção!");
-		return false;
-	}
 	
 	if ($("#emailNovaSenha").val() == ""){
 		myApp.alert("Você deve informar o seu e-mail de cadastro.", "Atenção!");

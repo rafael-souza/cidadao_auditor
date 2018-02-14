@@ -15,6 +15,13 @@
     },
     "cordova-plugin-geolocation": {
       "PACKAGE_NAME": "br.net.proex"
+    },
+    "cordova-plugin-sim": {
+      "PACKAGE_NAME": "br.net.proex"
+    },
+    "phonegap-plugin-push": {
+      "FCM_VERSION": "11.6.2",
+      "PACKAGE_NAME": "br.net.proex"
     }
   },
   "dependent_plugins": {}
